@@ -37,4 +37,4 @@ install_manifest.txt
 # Debug files
 *.dSYM/
 
-#.idea/
+.idea/
