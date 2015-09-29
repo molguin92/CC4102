@@ -2,12 +2,14 @@
 // Created by arachnid92 on 23-09-15.
 //
 
+#include <stdio.h>
 #include "brute_force.h"
 
 int brute_force ( char pattern[], char text[] )
 {
 
     int count = 0;
+    int comp = 0;
     int i, j, k;
 
     for ( i = 0; text[i] != '\0' ;i++ )
@@ -16,8 +18,8 @@ int brute_force ( char pattern[], char text[] )
         k = i;
         for ( j = 0; ;j++ )
         {
-
-            if ( pattern[j] = '\0' )
+            comp++;
+            if ( pattern[j] == '\0' )
             {
                 /*
                  * Reached the end of the pattern
@@ -25,6 +27,7 @@ int brute_force ( char pattern[], char text[] )
                  * Found an ocurrence of the pattern in the text.
                  */
                 count++;
+                comp--;
                 break;
             }
             else if ( text[k] == pattern[j] )
@@ -47,5 +50,6 @@ int brute_force ( char pattern[], char text[] )
         }
     }
 
+    fprintf ( stderr, "Brute-force comparisons: %d\n", comp );
     return count;
 }
