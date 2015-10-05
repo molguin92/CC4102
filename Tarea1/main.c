@@ -4,14 +4,25 @@
 
 #include <stdio.h>
 #include "brute_force.h"
+#include "kmp.h"
+#include "boyermoore.h"
 
 int main ( char argc, char * argv[] )
 {
 
-    char * pattern = argv[1];
-    char * text = argv[2];
+    char * pattern = "abcaba";
+    char * text = "xxxxxxxxxxxxxxabcababcabaxxxxxx";
+    size_t len = 2;
 
-    int count = brute_force( pattern, text);
+    int count = brute_force( pattern, text );
+
+    fprintf ( stdout, "Ocurrences of %s in %s: %d\n", pattern, text, count);
+
+    count = KMPSearch (pattern, text);
+
+    fprintf ( stdout, "Ocurrences of %s in %s: %d\n", pattern, text, count);
+
+    count = bmSearch ( pattern, text );
 
     fprintf ( stdout, "Ocurrences of %s in %s: %d\n", pattern, text, count);
 

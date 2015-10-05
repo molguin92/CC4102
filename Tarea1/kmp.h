@@ -7,5 +7,5 @@
 
 #endif //TAREA1_KMP_H
 
-void prefixfunction( char * pattern, char * table, size_t len );
-int knuthmorrispratt ( char * pattern, char * text, size_t len_patt );
+int KMPSearch(char *pat, char *txt);
+void computeLPSArray(char *pat, int M, int *lps);

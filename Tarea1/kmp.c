@@ -1,54 +1,86 @@
-//
-// Created by arachnid92 on 29-09-15.
-//
-
-#include <stddef.h>
-#include <stdlib.h>
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
 #include "kmp.h"
 
-/*
- * prefixfunction ( pattern, table, len)
- * inputs:
- *      pattern:    the text pattern to analyze
- *      table:      the prefix table to populate
- *      len:        length of the pattern (and table)
- */
-void prefixfunction ( char * pattern, char * table, size_t len )
+//REIMPLEMENTAR
+
+int KMPSearch(char *pat, char *txt)
 {
+    int M = strlen(pat);
+    int N = strlen(txt);
 
-    /*
-     * Initial conditions
-     */
-    table = ( char * ) malloc ( len * sizeof ( char ) );
-    /*sizeof(char) = 1, but we keep it for clarity*/
+    int count = 0;
 
-    table[ 0 ] = 0;
-    int j = 0;
-    int i;
+    // create lps[] that will hold the longest prefix suffix values for pattern
+    int *lps = (int *)malloc(sizeof(int)*M);
+    int j  = 0;  // index for pat[]
 
-    while ( j < len )
+    // Preprocess the pattern (calculate lps[] array)
+    computeLPSArray(pat, M, lps);
+
+    int i = 0;  // index for txt[]
+    while (i < N)
     {
-        i     = table[ j ];
-        while ( i > 0 && pattern[ i + 1 ] != pattern[ j + 1 ] )
-            i = table[ i ];
+        if (pat[j] == txt[i])
+        {
+            j++;
+            i++;
+        }
 
-        if ( pattern[ i + 1 ] == pattern[ j + 1 ] )
-            table[ j + 1 ] = i + 1;
-        else
-            table[ j + 1 ] = 0;
+        if (j == M)
+        {
+            count++;
+            j = lps[j-1];
+        }
 
-        j++;
+            // mismatch after j matches
+        else if (i < N && pat[j] != txt[i])
+        {
+            // Do not match lps[0..lps[j-1]] characters,
+            // they will match anyway
+            if (j != 0)
+                j = lps[j-1];
+            else
+                i = i+1;
+        }
     }
+    free(lps); // to avoid memory leak
+
+    return count;
 }
 
-int knuthmorrispratt( char * pattern, char * text, size_t len_patt )
+void computeLPSArray(char *pat, int M, int *lps)
 {
+    int len = 0;  // lenght of the previous longest prefix suffix
+    int i;
 
-    /*
-     * First things first: create prefix table
-     */
+    lps[0] = 0; // lps[0] is always 0
+    i = 1;
 
-    char * table;
+    // the loop calculates lps[i] for i = 1 to M-1
+    while (i < M)
+    {
+        if (pat[i] == pat[len])
+        {
+            len++;
+            lps[i] = len;
+            i++;
+        }
+        else // (pat[i] != pat[len])
+        {
+            if (len != 0)
+            {
+                // This is tricky. Consider the example AAACAAAA and i = 7.
+                len = lps[len-1];
 
-
+                // Also, note that we do not increment i here
+            }
+            else // if (len == 0)
+            {
+                lps[i] = 0;
+                i++;
+            }
+        }
+    }
 }
