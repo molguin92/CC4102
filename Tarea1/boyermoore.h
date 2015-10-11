@@ -16,4 +16,4 @@ void badCharTable (
         int * table
                   );
 
-int bmSearch ( char * pattern, char * text );
+int bmSearch ( char * pattern, char * text, int * comp );

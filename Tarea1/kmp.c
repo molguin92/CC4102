@@ -8,7 +8,7 @@
  * description of the algorithm.
  */
 
-int KMPSearch ( char * pattern, char * text )
+int KMPSearch ( char * pattern, char * text, int * comp )
 {
     // returns the number of occurrences of
     // pattern in text.
@@ -18,12 +18,14 @@ int KMPSearch ( char * pattern, char * text )
     int index_p = 0; //current index in the pattern
     size_t len = strlen ( pattern );
     int lps_table[len];
+    *comp = 0;
 
     //first, we calculate the prefix table.
     computeLPSArray (pattern, len, lps_table);
 
     while ( text[index_t + index_p] != '\0')
     {
+        *comp++;
         if ( pattern[index_p] == text[index_t + index_p] )
         {
             if ( index_p == len - 1)

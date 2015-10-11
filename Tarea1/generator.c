@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <math.h>
 #include "generator.h"
+
 
 void generateRandomString(
         size_t len_alphabet,
@@ -21,29 +21,71 @@ void generateRandomString(
 
     for ( i = 0; i < len_string; i++ )
         string[ i ] = alphabet[ rand () % len_alphabet ];
+    string[len_string] = '\0';
 
 }
 
-void generatePatterns(char * alphabet)
+int charInAlphabet( char c, char * alphabet, size_t len_alphabet )
 {
-
-
-    size_t len_alphabet = strlen (alphabet);
-    FILE * f = fopen (strcat(alphabet, "_input.out"), "w");
     int i;
-    size_t a;
-    char * pattern;
-
-    for ( i = 2; i < 8; i++ )
+    for ( i = 0; i < len_alphabet; i++ )
     {
-        a = (size_t) pow(2.0, i);
-        pattern = (char *)malloc (a + 1);
-        pattern[a] = '\0';
-        generateRandomString (len_alphabet, alphabet, a, pattern);
-        fprintf (f, "%s\n", pattern);
-        free(pattern);
+        if ( c == alphabet[i] )
+            return 1;
     }
 
-    fclose (f);
-
+    return 0;
 }
+
+void extractStringFromFile( const char * filename, char * string, size_t len, char * alphabet )
+{
+
+    FILE * f = fopen (filename, "r");
+    int i = 0;
+    char c;
+    size_t len_alphabet = strlen (alphabet);
+
+    while ( i < len )
+    {
+        c = (char)fgetc (f);
+        if ( charInAlphabet (c, alphabet, len_alphabet))
+        {
+            string[i] = c;
+            i++;
+        }
+    }
+    string[len] = '\0';
+
+    fclose (f);
+}
+
+void extractStringFromFile_convertSeparators( const char * filename, char * string, size_t len, char * alphabet, char separator )
+{
+
+    FILE * f = fopen (filename, "r");
+    int i = 0;
+    char c;
+    size_t len_alphabet = strlen (alphabet);
+
+    while ( i < len )
+    {
+        c = (char)fgetc (f);
+        if ( charInAlphabet (c, alphabet, len_alphabet))
+            string[i] = c;
+        else
+        {
+            string[ i ] = separator;
+            while ( !charInAlphabet ((c = (char)fgetc (f)), alphabet, len_alphabet) ){}
+            i++;
+            string[i] = c;
+        }
+
+
+        i++;
+    }
+    string[len] = '\0';
+
+    fclose (f);
+}
+
+

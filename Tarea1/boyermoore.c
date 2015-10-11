@@ -25,7 +25,7 @@ void badCharTable (
         table[pattern[i]] = i;
 }
 
-int bmSearch ( char * pattern, char * text )
+int bmSearch ( char * pattern, char * text, int * comp )
 {
     // the actual search algorithm
     // returns the number of occurrences of pattern in text.
@@ -35,11 +35,13 @@ int bmSearch ( char * pattern, char * text )
     int pos_patt = 0;
     int count = 0;
     int badchar[CHAR_MAX];
+    *comp = 0;
 
     badCharTable (pattern, len, badchar);
 
     while ( text[pos_patt + len - 1] != '\0' )
     {
+        *comp++;
         while ( index_p >= 0 && text[pos_patt + index_p] == pattern[index_p] )
             // while characters match, keep searching
             index_p--;

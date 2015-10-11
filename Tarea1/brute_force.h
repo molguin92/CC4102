@@ -7,4 +7,4 @@
 
 #endif //TAREA1_BRUTE_FORCE_H
 
-int brute_force ( char pattern[], char text[] );
+int brute_force ( char pattern[], char text[], int * comp );

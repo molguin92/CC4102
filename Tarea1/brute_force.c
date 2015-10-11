@@ -3,15 +3,14 @@
 // Implementation of a naive (brute force) string search algorithm.
 //
 
-#include <stdio.h>
 #include "brute_force.h"
 
-int brute_force ( char pattern[], char text[] )
+int brute_force ( char pattern[], char text[], int * comp )
 {
     // returns the number of occurrences of pattern in text.
     int count = 0;
-    int comp = 0;
     int i, j, k;
+    *comp = 0;
 
     for ( i = 0; text[i] != '\0' ;i++ )
     {
@@ -19,7 +18,7 @@ int brute_force ( char pattern[], char text[] )
         k = i;
         for ( j = 0; ;j++ )
         {
-            comp++;
+            *comp++;
             if ( pattern[j] == '\0' )
             {
                 /*
@@ -28,7 +27,7 @@ int brute_force ( char pattern[], char text[] )
                  * Found an ocurrence of the pattern in the text.
                  */
                 count++;
-                comp--;
+                *comp--;
                 break;
             }
             else if ( text[k] == pattern[j] )
@@ -50,7 +49,5 @@ int brute_force ( char pattern[], char text[] )
                 break;
         }
     }
-
-    fprintf ( stderr, "Brute-force comparisons: %d\n", comp );
     return count;
 }
