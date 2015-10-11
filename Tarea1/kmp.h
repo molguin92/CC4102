@@ -7,5 +7,5 @@
 
 #endif //TAREA1_KMP_H
 
-int KMPSearch(char *pat, char *txt);
+int KMPSearch(char *pattern, char *text);
 void computeLPSArray(char *pat, int M, int *lps);

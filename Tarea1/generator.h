@@ -10,4 +10,9 @@
 
 #endif //TAREA1_GENERATOR_H
 
-void generate_text(size_t len_alphabet, char * alphabet, size_t size_text);
+void generateRandomString( size_t len_alphabet,
+                           char * alphabet,
+                           size_t len_string,
+                           char *  string );
+
+void generatePatterns(char * alphabet);

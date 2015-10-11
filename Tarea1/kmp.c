@@ -1,86 +1,88 @@
 #include<stdio.h>
 #include<string.h>
-#include<stdlib.h>
 #include "kmp.h"
 
-//REIMPLEMENTAR
+/*
+ * Implementation of the Knuth-Morris-Pratt string search algorithm.
+ * Based on wikipedia's (https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)
+ * description of the algorithm.
+ */
 
-int KMPSearch(char *pat, char *txt)
+int KMPSearch ( char * pattern, char * text )
 {
-    int M = strlen(pat);
-    int N = strlen(txt);
+    // returns the number of occurrences of
+    // pattern in text.
 
-    int count = 0;
+    int count = 0; //number of occurrences
+    int index_t = 0; //current index in the text
+    int index_p = 0; //current index in the pattern
+    size_t len = strlen ( pattern );
+    int lps_table[len];
 
-    // create lps[] that will hold the longest prefix suffix values for pattern
-    int *lps = (int *)malloc(sizeof(int)*M);
-    int j  = 0;  // index for pat[]
+    //first, we calculate the prefix table.
+    computeLPSArray (pattern, len, lps_table);
 
-    // Preprocess the pattern (calculate lps[] array)
-    computeLPSArray(pat, M, lps);
-
-    int i = 0;  // index for txt[]
-    while (i < N)
+    while ( text[index_t + index_p] != '\0')
     {
-        if (pat[j] == txt[i])
+        if ( pattern[index_p] == text[index_t + index_p] )
         {
-            j++;
-            i++;
-        }
-
-        if (j == M)
-        {
-            count++;
-            j = lps[j-1];
-        }
-
-            // mismatch after j matches
-        else if (i < N && pat[j] != txt[i])
-        {
-            // Do not match lps[0..lps[j-1]] characters,
-            // they will match anyway
-            if (j != 0)
-                j = lps[j-1];
+            if ( index_p == len - 1)
+            {
+                //found a match
+                count++;
+                index_p = 0;
+                index_t++;
+                continue;
+            }
             else
-                i = i+1;
+                //keep searching
+                index_p++;
+        }
+        else
+        {
+            //mismatch
+            if ( lps_table[index_p] > -1 )
+            {
+                //fall back according to the table.
+                index_t += index_p - lps_table[index_p];
+                index_p = lps_table[index_p];
+            }
+            else
+            {
+                //no fallback possible, just move forward.
+                index_p = 0;
+                index_t++;
+            }
         }
     }
-    free(lps); // to avoid memory leak
 
-    return count;
+    return  count;
 }
 
-void computeLPSArray(char *pat, int M, int *lps)
+void computeLPSArray ( char * pattern, int len_patt, int * lps_table )
 {
-    int len = 0;  // lenght of the previous longest prefix suffix
-    int i;
+    // populates the prefix table.
 
-    lps[0] = 0; // lps[0] is always 0
-    i = 1;
+    int pos = 2;
+    int cnd = 0;
 
-    // the loop calculates lps[i] for i = 1 to M-1
-    while (i < M)
+    lps_table[0] = -1;
+    lps_table[1] = 0;
+
+    while ( pos < len_patt )
     {
-        if (pat[i] == pat[len])
+        if ( pattern[pos - 1] == pattern[cnd] )
         {
-            len++;
-            lps[i] = len;
-            i++;
+            cnd++;
+            lps_table[pos] = cnd;
+            pos++;
         }
-        else // (pat[i] != pat[len])
+        else if ( cnd > 0 )
+            cnd = lps_table[cnd];
+        else
         {
-            if (len != 0)
-            {
-                // This is tricky. Consider the example AAACAAAA and i = 7.
-                len = lps[len-1];
-
-                // Also, note that we do not increment i here
-            }
-            else // if (len == 0)
-            {
-                lps[i] = 0;
-                i++;
-            }
+            lps_table[pos] = 0;
+            pos++;
         }
     }
 }

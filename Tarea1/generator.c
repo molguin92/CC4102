@@ -5,35 +5,45 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
+#include <math.h>
 #include "generator.h"
 
-void generate_text ( size_t len_alphabet, char * alphabet, size_t size_text )
+void generateRandomString(
+        size_t len_alphabet,
+        char *alphabet,
+        size_t len_string,
+        char *string
+                         )
+{
+    size_t i;
+    srand ( time ( NULL ) );
+
+    for ( i = 0; i < len_string; i++ )
+        string[ i ] = alphabet[ rand () % len_alphabet ];
+
+}
+
+void generatePatterns(char * alphabet)
 {
 
-    /*
-     * char = 8bits = 1byte
-     */
 
-    int init_t = time();
-    char * text = ( char * ) malloc ( ( size_text + 1 ) * sizeof ( char ) );
+    size_t len_alphabet = strlen (alphabet);
+    FILE * f = fopen (strcat(alphabet, "_input.out"), "w");
+    int i;
+    size_t a;
+    char * pattern;
 
-    size_t i;
-    size_t j;
-    char c;
-    FILE * f;
-
-    srand (time(NULL));
-    text[size_text] = '\0';
-
-    for ( i = 0; i < size_text; i++ )
+    for ( i = 2; i < 8; i++ )
     {
-        j = rand() % len_alphabet;
-        c = alphabet[j];
-        text[i] = c;
+        a = (size_t) pow(2.0, i);
+        pattern = (char *)malloc (a + 1);
+        pattern[a] = '\0';
+        generateRandomString (len_alphabet, alphabet, a, pattern);
+        fprintf (f, "%s\n", pattern);
+        free(pattern);
     }
 
-
-    f = fopen ( "gen_text.out", "w" );
-    fprintf ( f, text );
+    fclose (f);
 
 }

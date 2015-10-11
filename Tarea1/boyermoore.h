@@ -16,20 +16,4 @@ void badCharTable (
         int * table
                   );
 
-void goodSuffix1 (
-                 char * pattern,
-                 size_t len_patt,
-                 int * table,
-                 int * aux_table
-                 );
-
-void goodSuffix2 (
-                 char * pattern,
-                 size_t len_patt,
-                 int * table,
-                 int * aux_table
-                 );
-
-void bmPreprocess ( char * pattern, size_t len_patt );
-
-int bmSearch( char * pattern, char * text );
+int bmSearch ( char * pattern, char * text );

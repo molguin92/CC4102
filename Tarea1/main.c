@@ -6,12 +6,16 @@
 #include "brute_force.h"
 #include "kmp.h"
 #include "boyermoore.h"
+#include "generator.h"
 
 int main ( char argc, char * argv[] )
 {
 
-    char * pattern = "abcaba";
-    char * text = "xxxxxxxxxxxxxxabcababcabaxxxxxx";
+    //generatePatterns ("01");
+
+
+    char * pattern = "11";
+    char * text = "11111111111111";
     size_t len = 2;
 
     int count = brute_force( pattern, text );

@@ -1,5 +1,6 @@
 //
 // Created by arachnid92 on 23-09-15.
+// Implementation of a naive (brute force) string search algorithm.
 //
 
 #include <stdio.h>
@@ -7,7 +8,7 @@
 
 int brute_force ( char pattern[], char text[] )
 {
-
+    // returns the number of occurrences of pattern in text.
     int count = 0;
     int comp = 0;
     int i, j, k;
