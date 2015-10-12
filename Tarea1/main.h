@@ -6,3 +6,6 @@
 #define TAREA1_MAIN_H
 
 #endif //TAREA1_MAIN_H
+
+#define MAX_PATTERN 4
+#define EXP_COUNT 150

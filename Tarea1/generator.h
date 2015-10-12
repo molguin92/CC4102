@@ -19,3 +19,4 @@ void generateRandomString( size_t len_alphabet,
 int charInAlphabet( char c, char * alphabet, size_t len_alphabet );
 void extractStringFromFile( const char * filename, char * string, size_t len, char * alphabet );
 void extractStringFromFile_convertSeparators( const char * filename, char * string, size_t len, char * alphabet, char separator );
+void extractRandomSubstring ( size_t len_substring, char * substring, size_t len_string, char * string );

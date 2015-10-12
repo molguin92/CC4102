@@ -18,7 +18,7 @@ int brute_force ( char pattern[], char text[], int * comp )
         k = i;
         for ( j = 0; ;j++ )
         {
-            *comp++;
+            (*comp)++;
             if ( pattern[j] == '\0' )
             {
                 /*
@@ -27,7 +27,7 @@ int brute_force ( char pattern[], char text[], int * comp )
                  * Found an ocurrence of the pattern in the text.
                  */
                 count++;
-                *comp--;
+                (*comp)--;
                 break;
             }
             else if ( text[k] == pattern[j] )

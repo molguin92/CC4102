@@ -41,7 +41,7 @@ int bmSearch ( char * pattern, char * text, int * comp )
 
     while ( text[pos_patt + len - 1] != '\0' )
     {
-        *comp++;
+        (*comp)++;
         while ( index_p >= 0 && text[pos_patt + index_p] == pattern[index_p] )
             // while characters match, keep searching
             index_p--;

@@ -25,7 +25,7 @@ int KMPSearch ( char * pattern, char * text, int * comp )
 
     while ( text[index_t + index_p] != '\0')
     {
-        *comp++;
+        (*comp)++;
         if ( pattern[index_p] == text[index_t + index_p] )
         {
             if ( index_p == len - 1)

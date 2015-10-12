@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "generator_main.h"
 #include "generator.h"
 
 int main ( int argc, char * argv[] )
@@ -14,7 +13,7 @@ int main ( int argc, char * argv[] )
     char * alphabet = "01";
 
     //1MB text file
-    FILE * f = fopen ("binario.in", "w");
+    FILE * f = fopen ("binary.in", "w");
     char text[MB + 1]; //+1 for EOL symbol \0
     generateRandomString (strlen (alphabet), alphabet, MB, text);
     fprintf (f, "%s", text);
