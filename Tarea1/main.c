@@ -31,6 +31,7 @@ int main ( char argc, char * argv[] )
 
     fclose ( f );
 
+    printf ( "%d experiments per pattern length!", EXP_COUNT );
     printf ( "Working on: Binary alphabet.\n" );
 
     f = fopen ( "results_binary.csv", "w" );
