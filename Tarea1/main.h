@@ -7,5 +7,5 @@
 
 #endif //TAREA1_MAIN_H
 
-#define MAX_PATTERN 4
+#define MAX_PATTERN 128
 #define EXP_COUNT 150
