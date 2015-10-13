@@ -42,7 +42,7 @@ int main ( char argc, char * argv[] )
     for ( i = 2; i <= MAX_PATTERN; i = 2 * i ) // i = 2, 4, 8, ..., 2^7 = 128
     {
         printf ( "Searching for patterns of length %d.\n", i );
-        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 150 veces para asegurar error de 5%
+        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 500 veces para asegurar error de 5%
         {
             generateRandomString ( 2, alphabet, ( size_t ) i, pattern );
             fprintf ( f, "%d,%s,", i, pattern );
@@ -88,7 +88,7 @@ int main ( char argc, char * argv[] )
     for ( i = 2; i <= MAX_PATTERN; i = 2 * i ) // i = 2, 4, 8, ..., 2^7 = 128
     {
         printf ( "Searching for patterns of length %d.\n", i );
-        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 150 veces para asegurar error de 5%
+        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 500 veces para asegurar error de 5%
         {
             extractRandomSubstring ( ( size_t ) i, pattern, MB + 1, text );
             fprintf ( f, "%d,%s,", i, pattern );
@@ -133,7 +133,7 @@ int main ( char argc, char * argv[] )
     for ( i = 2; i <= MAX_PATTERN; i = 2 * i ) // i = 2, 4, 8, ..., 2^7 = 128
     {
         printf ( "Searching for patterns of length %d.\n", i );
-        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 150 veces para asegurar error de 5%
+        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 500 veces para asegurar error de 5%
         {
             extractRandomSubstring ( ( size_t ) i, pattern, MB + 1, text );
             fprintf ( f, "%d,%s,", i, pattern );
@@ -178,7 +178,7 @@ int main ( char argc, char * argv[] )
     for ( i = 2; i <= MAX_PATTERN; i = 2 * i ) // i = 2, 4, 8, ..., 2^7 = 128
     {
         printf ( "Searching for patterns of length %d.\n", i );
-        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 150 veces para asegurar error de 5%
+        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 500 veces para asegurar error de 5%
         {
             extractRandomSubstring ( ( size_t ) i, pattern, MB + 1, text );
             fprintf ( f, "%d,%s,", i, pattern );
@@ -224,7 +224,7 @@ int main ( char argc, char * argv[] )
     for ( i = 2; i <= MAX_PATTERN; i = 2 * i ) // i = 2, 4, 8, ..., 2^7 = 128
     {
         printf ( "Searching for patterns of length %d.\n", i );
-        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 150 veces para asegurar error de 5%
+        for ( reps = 0; reps < EXP_COUNT; reps++ ) // repetir busqueda 500 veces para asegurar error de 5%
         {
             extractRandomSubstring ( ( size_t ) i, pattern, MB + 1, text );
             fprintf ( f, "%d,%s,", i, pattern );
