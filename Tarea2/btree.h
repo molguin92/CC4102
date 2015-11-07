@@ -16,9 +16,10 @@
  * 205 addresses of subtrees (nodes), each of 4 bytes:  820 bytes
  * 204 values stored in the node, each of 16 bytes:    3264 bytes
  * 1 4-byte value to store number of entries:             4 bytes
- * Total size of a node:                               4088 bytes
+ * 1 4-byte value to store number of subtrees:            4 bytes
+ * 1 4-byte value to store parent ID:                     4 bytes
+ * Total size of a node:                               4096 bytes
  * Page size:                                          4096 bytes
- * 8 bytes to spare... Maybe some extra data?
  */
 
 #define PAGE_SIZE 4096
@@ -27,18 +28,28 @@
 
 struct Node
 {
+    uint32_t parent;
     uint32_t n_entries;
+    uint32_t n_subtrees;
     uint32_t subtrees[205];
     uint8_t  entries[B][VALUE_SIZE];
+};
+
+struct Header
+{
+    uint32_t root;
+    uint32_t n_nodes;
 };
 
 
 void init_BTREE ();
 
-int  insert_value ( char * value, int node_k );
+int  insert_value_at_leaf ( char * value, int node_k );
 
 void insert_ordered ( char * new, struct Node * des );
 
 void read_node ( struct Node * des, int node_k );
 
 void write_node ( struct Node * src, int node_k );
+
+uint32_t find_subtree ( char * value, struct Node * node );

@@ -2,21 +2,6 @@
 // btree is part of Tarea2, for the course CC4102.
 // This submission is developed together with Camila Romero.
 
-// Page size: 4096 bytes (4KB)
-// Pointer size: 8 bytes (64 bit arch)
-// B-trees: B/2 minimum offspring, max B offspring
-// 15 (16 with null delimiter) bytes per value
-// B = 256, B/2 = 128
-
-/*
- * Structure of a Node:
- * Size: 4096 bytes (1 IO page)
- * B = 255 (16 bytes each), starting from byte 16.
- * First 16 bytes (0 - 15) reserved for metadata:
- *      Bytes [0, 1]: Number of subtrees of present node (uint16_t)
- *      Bytes [2, 5]: Node ID (uint32_t)
- */
-
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -38,32 +23,74 @@ void init_BTREE ()
         mkdir ( "./.btree", 0700 );
     }
 
+    struct Header * header = ( struct Header * ) malloc ( sizeof (struct Header ) );
+    header->n_nodes = 1;
+    header->root = 0;
+    FILE * f = fopen ( ".btree/header", "wb" );
+    if ( f != NULL )
+    {
+        fwrite ( header, sizeof ( struct Header ), 1, f );
+        fclose ( f );
+    }
+    free(header);
+
     struct Node * root = ( struct Node * ) malloc ( sizeof ( struct Node ) );
     write_node ( root, 0 );
     free ( root );
 }
 
 
-int insert_value ( char * value, int node_k )
+int insert_value_at_leaf ( char * value, int node_k )
 {
+
+    /* if handed the header of the tree, give the value to the root */
+
+    if ( node_k == -1 )
+    {
+        struct Header * h = ( struct Header * ) malloc ( sizeof (struct Header ) );
+        FILE * f = fopen ( "./.btree/header", "rb" );
+        if ( f != NULL )
+        {
+            fread ( h, sizeof ( struct Header ), 1, f );
+            fclose ( f );
+        }
+        node_k = h->root;
+        free(h);
+        return insert_value_at_leaf (value, node_k);
+    }
+
 
     /* read data from node file */
     struct Node * node = ( struct Node * ) malloc ( sizeof ( struct Node ) );
     read_node ( node, node_k );
+    uint32_t subtree_root;
+
+    /* check if a split is needed */
+    
+
 
     /*
-     * if node has less than B values, insert value in this node
+     * check if node is leaf.
+     * if not, hand the value to the correct subtree.
+     */
+
+    if ( node-> n_subtrees != 0 ) //not a leaf
+    {
+        subtree_root = find_subtree (value, node);
+        return insert_value_at_leaf (value, subtree_root);
+    }
+
+    /*
+     * if node has less than B + 1 values, insert value in this node
      * Keep node ordered!
      */
-    if ( node->n_entries < B )
+    if ( node->n_entries < B + 1)
     {
         insert_ordered ( value, node );
         write_node ( node, node_k );
         free ( node );
         return node_k;
     }
-
-    /* else,we need to split this sucker */
 
 
     return 0;
@@ -104,7 +131,7 @@ void insert_ordered ( char * new, struct Node (  * des) )
 
 void read_node ( struct Node * des, int node_k )
 {
-    char path[5];
+    char path[50];
     sprintf ( path, "./.btree/%d.node", node_k );
     FILE * f = fopen ( path, "rb" );
     if ( f != NULL )
@@ -116,7 +143,7 @@ void read_node ( struct Node * des, int node_k )
 
 void write_node ( struct Node * src, int node_k )
 {
-    char path[5];
+    char path[50];
     sprintf ( path, "./.btree/%d.node", node_k );
     FILE * f = fopen ( path, "wb" );
     if ( f != NULL )
@@ -124,4 +151,18 @@ void write_node ( struct Node * src, int node_k )
         fwrite ( src, sizeof ( struct Node ), 1, f );
         fclose ( f );
     }
+}
+
+uint32_t find_subtree ( char * value, struct Node * node )
+{
+
+    uint32_t i;
+
+    for ( i = 0; i < node->n_entries; i++ )
+    {
+        if ( strcmp (value, (char *) node->entries[i] ) < 0 )
+            break;
+    }
+
+    return node->subtrees[i];
 }

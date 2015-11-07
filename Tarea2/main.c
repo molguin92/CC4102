@@ -10,8 +10,8 @@ int main ()
 {
     fprintf ( stdout, "%d\n", ( int ) sizeof ( struct Node ) );
     init_BTREE ();
-    insert_value ( "wolololo", 0 );
-    insert_value ( "wololola", 0 );
+    insert_value_at_leaf ( "wolololo", -1 );
+    insert_value_at_leaf ( "wololola", -1 );
 
     struct Node * node = ( struct Node * ) malloc ( sizeof ( struct Node ) );
     FILE        * f    = fopen ( "./.btree/0.node", "rb" );
