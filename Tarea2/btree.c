@@ -10,33 +10,41 @@
 #include "btree.h"
 
 struct stat st = { 0 };
+struct Header * Btree; // TODO: FREE THE MOTHERFUCKING MEMORY
 
-void init_BTREE ()
+struct Header * init_BTREE ()
 {
+
+    Btree = ( struct Header * ) malloc ( sizeof (struct Header ) );
+
     if ( stat ( "./.btree", &st ) == -1 )
     {
         mkdir ( "./.btree", 0700 );
+        Btree->n_nodes = 1;
+        Btree->root = 1;
+        FILE * f = fopen ( ".btree/header", "wb" );
+        if ( f != NULL )
+        {
+            fwrite ( Btree, sizeof ( struct Header ), 1, f );
+            fclose ( f );
+        }
+
+        struct Node * root = ( struct Node * ) malloc ( sizeof ( struct Node ) );
+        root->n_entries = 0;
+        root->node_k = 1;
+        write_node ( root, root->node_k );
+        free ( root );
     }
     else
     {
-        system ( "rm -rf ./.btree" );
-        mkdir ( "./.btree", 0700 );
+        FILE * f = fopen ( ".btree/header", "rb" );
+        if ( f != NULL )
+        {
+            fread ( Btree, sizeof ( struct Header ), 1, f );
+            fclose ( f );
+        }
     }
 
-    struct Header * header = ( struct Header * ) malloc ( sizeof (struct Header ) );
-    header->n_nodes = 1;
-    header->root = 0;
-    FILE * f = fopen ( ".btree/header", "wb" );
-    if ( f != NULL )
-    {
-        fwrite ( header, sizeof ( struct Header ), 1, f );
-        fclose ( f );
-    }
-    free(header);
-
-    struct Node * root = ( struct Node * ) malloc ( sizeof ( struct Node ) );
-    write_node ( root, 0 );
-    free ( root );
 }
 
 
@@ -45,7 +53,7 @@ int insert_value_at_leaf ( char * value, int node_k )
 
     /* if handed the header of the tree, give the value to the root */
 
-    if ( node_k == -1 )
+    if ( node_k < 0 )
     {
         struct Header * h = ( struct Header * ) malloc ( sizeof (struct Header ) );
         FILE * f = fopen ( "./.btree/header", "rb" );
@@ -65,35 +73,38 @@ int insert_value_at_leaf ( char * value, int node_k )
     read_node ( node, node_k );
     uint32_t subtree_root;
 
-    /* check if a split is needed */
-    
-
-
     /*
      * check if node is leaf.
      * if not, hand the value to the correct subtree.
      */
 
-    if ( node-> n_subtrees != 0 ) //not a leaf
+    if ( node->subtrees[0] != 0 ) //not a leaf
     {
         subtree_root = find_subtree (value, node);
         return insert_value_at_leaf (value, subtree_root);
     }
 
     /*
-     * if node has less than B + 1 values, insert value in this node
+     * if node has less than B values, insert value in this node
      * Keep node ordered!
      */
-    if ( node->n_entries < B + 1)
-    {
+    if ( node->n_entries < B )
         insert_ordered ( value, node );
+    if ( node->n_entries == B ) // need to split
+    {
+        struct Node * sibling = ( struct Node * ) malloc ( sizeof ( struct Node ) );
+        char * median[16] = {0};
+
+        split_node (node, sibling, median);
+        // Todo: finish
+
+    }
+    else
+    {
         write_node ( node, node_k );
         free ( node );
         return node_k;
     }
-
-
-    return 0;
 }
 
 void insert_ordered ( char * new, struct Node (  * des) )
@@ -107,6 +118,8 @@ void insert_ordered ( char * new, struct Node (  * des) )
     for ( i = 0; i < des->n_entries; i++ )
     {
         comp = strcmp ( new, ( char * ) des->entries[ i ] );
+        if ( comp == 0 ) // entry already exists, do nothing.
+            return;
         if ( comp < 0 ) // new < entry
             break;
     }
