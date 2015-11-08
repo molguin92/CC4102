@@ -48,7 +48,29 @@ struct Header * init_BTREE ()
 }
 
 
-int insert_value_at_leaf ( char * value, int node_k )
+void split_node ( struct Node * src, struct Node * sibling, char ** median )
+{
+
+    uint32_t i;
+    char null[16] = {0};
+    for ( i = B/2 + 1; i < B; i++ )
+    {
+        // move upper half of entries to new node
+        strcpy ((char *)sibling->entries[i - (B/2 + 1)], (char *)src->entries[i]);
+        strcpy ((char *) src->entries[i], (char *)null);
+    }
+
+    strcpy (*median, (char *)src->entries[B/2]);
+    strcpy ( (char *) src->entries[B/2], (char *)null);
+
+    src->n_entries = B/2;
+    sibling->n_entries = B/2 - 1;
+
+    // TODO: split references
+
+}
+
+int insert_value_at_leaf ( char * value, int node_k, int parent_k )
 {
 
     /* if handed the header of the tree, give the value to the root */
@@ -64,7 +86,7 @@ int insert_value_at_leaf ( char * value, int node_k )
         }
         node_k = h->root;
         free(h);
-        return insert_value_at_leaf (value, node_k);
+        return insert_value_at_leaf ( value, node_k, -1 );
     }
 
 
@@ -81,7 +103,7 @@ int insert_value_at_leaf ( char * value, int node_k )
     if ( node->subtrees[0] != 0 ) //not a leaf
     {
         subtree_root = find_subtree (value, node);
-        return insert_value_at_leaf (value, subtree_root);
+        return insert_value_at_leaf ( value, subtree_root, node_k );
     }
 
     /*
@@ -96,8 +118,15 @@ int insert_value_at_leaf ( char * value, int node_k )
         char * median[16] = {0};
 
         split_node (node, sibling, median);
-        // Todo: finish
+        Btree->n_nodes++;
+        sibling->node_k = Btree->n_nodes;
+        write_node (sibling, sibling->node_k);
 
+        insert_split (parent_k, *median, node_k, sibling->node_k);
+
+        free(sibling);
+        free (node);
+        return node_k;
     }
     else
     {
@@ -107,10 +136,11 @@ int insert_value_at_leaf ( char * value, int node_k )
     }
 }
 
-void insert_ordered ( char * new, struct Node (  * des) )
+int insert_ordered ( char * new, struct Node (  * des) )
 {
     /* inserts the value "new" into the node,
-     * while maintaining the order of the values. */
+     * while maintaining the order of the values.
+     * Returns the index of where the value was inserted. */
 
     uint32_t i, j, delta;
     char     temp[B][VALUE_SIZE] = { { 0 } };
@@ -119,7 +149,7 @@ void insert_ordered ( char * new, struct Node (  * des) )
     {
         comp = strcmp ( new, ( char * ) des->entries[ i ] );
         if ( comp == 0 ) // entry already exists, do nothing.
-            return;
+            return i;
         if ( comp < 0 ) // new < entry
             break;
     }
@@ -138,6 +168,7 @@ void insert_ordered ( char * new, struct Node (  * des) )
     }
 
     des->n_entries++;
+    return i;
 
 }
 
@@ -178,4 +209,12 @@ uint32_t find_subtree ( char * value, struct Node * node )
     }
 
     return node->subtrees[i];
+}
+
+void insert_split ( int parent_k, char * value, int left, int right )
+{
+
+    // inserts a value from a split node into its parent.
+
+
 }
