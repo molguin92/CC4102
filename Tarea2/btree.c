@@ -58,16 +58,21 @@ void split_node ( struct Node * src, struct Node * sibling, char ** median )
         // move upper half of entries to new node
         strcpy ((char *)sibling->entries[i - (B/2 + 1)], (char *)src->entries[i]);
         strcpy ((char *) src->entries[i], (char *)null);
+
+        // move references as well
+        sibling->subtrees[i - (B/2 + 1)] = src->subtrees[i];
+        src->subtrees[i] = 0;
     }
+
+    // move last reference
+    sibling->subtrees[B/2 - 1] = src->subtrees[B];
+    src->subtrees[B] = 0;
 
     strcpy (*median, (char *)src->entries[B/2]);
     strcpy ( (char *) src->entries[B/2], (char *)null);
 
     src->n_entries = B/2;
     sibling->n_entries = B/2 - 1;
-
-    // TODO: split references
-
 }
 
 int insert_value_at_leaf ( char * value, int node_k, int parent_k )
@@ -112,6 +117,7 @@ int insert_value_at_leaf ( char * value, int node_k, int parent_k )
      */
     if ( node->n_entries < B )
         insert_ordered ( value, node );
+
     if ( node->n_entries == B ) // need to split
     {
         struct Node * sibling = ( struct Node * ) malloc ( sizeof ( struct Node ) );
@@ -216,5 +222,13 @@ void insert_split ( int parent_k, char * value, int left, int right )
 
     // inserts a value from a split node into its parent.
 
+    /* read data from node file */
+    struct Node * node = ( struct Node * ) malloc ( sizeof ( struct Node ) );
+    read_node ( node, parent_k );
+
+    if ( node->n_entries < B )
+    {
+        // enough space, just insert
+    }
 
 }
