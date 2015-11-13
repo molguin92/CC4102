@@ -52,7 +52,26 @@ void init_hashing ()
     free(bucket);
 }
 
-void insert_value ( char * value )
+
+int search ( char * value )
+{
+    fprintf (stderr, "Searching for value %s\n", value);
+
+    uint32_t hash = hashd ( value, directory->global_depth_d );
+
+    fprintf (stderr, "Hash_d for global depth %d: %d\n", directory->global_depth_d, hash);
+
+    struct Bucket * bucket = ( struct Bucket * ) malloc ( sizeof ( struct Bucket ) );
+    read_Bucket ( bucket, directory->table[ hash ] );
+
+    for (int i = 0; i < bucket->n_entries; i++)
+        if(strcmp ((char*)bucket->values[i], value) == 0)
+            return 1;
+
+    return 0;
+}
+
+void put_value ( char * value )
 {
 
     fprintf (stderr, "Adding value %s\n", value);
@@ -96,14 +115,14 @@ void insert_value ( char * value )
     {
         simple_split ( bucket );
         free (bucket);
-        insert_value (value);
+        put_value ( value );
     }
     else
     {
         double_directory (bucket->local_depth_k + 1);
         simple_split (bucket);
         free (bucket);
-        insert_value (value);
+        put_value ( value );
     }
 }
 

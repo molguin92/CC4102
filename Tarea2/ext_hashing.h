@@ -28,4 +28,6 @@ struct Directory
 
 
 void init_hashing ();
-void insert_value ( char * value );
+void put_value ( char * value );
+int  search ( char * value );
+int pop_value ( char * value );

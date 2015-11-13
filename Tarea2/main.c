@@ -11,8 +11,12 @@ int main ()
 {
     fprintf (stdout, "Testing insert into hash.\n");
     init_hashing ();
-    insert_value ( "GGGGGGGGGGGGGGG" );
-    insert_value ( "CCCCCCCCCCCCCCC" );
-    insert_value ( "AAAAAAAAAAAAAAA" );
-    insert_value ( "TTTTTTTTTTTTTTT" );
+    put_value ( "GGGGGGGGGGGGGGG" );
+    put_value ( "CCCCCCCCCCCCCCC" );
+    put_value ( "AAAAAAAAAAAAAAA" );
+    put_value ( "TTTTTTTTTTTTTTT" );
+
+    int a = search ("AAAAAAAAAAAAAAA");
+    if ( a == 1 )
+        printf ("A was found.");
 }
