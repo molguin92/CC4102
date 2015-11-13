@@ -9,19 +9,20 @@
 #include "ext_hashing.h"
 #include "hash.h"
 
-void     read_Bucket ( struct Bucket * des, int k );
-void     write_Bucket ( struct Bucket * src, int k );
-uint32_t simple_split ( struct Bucket * bucket, struct Bucket * split, uint32_t hash_i );
-void     double_directory ( u_int8_t local_depth );
+void    read_Bucket ( struct Bucket * des, int k );
+void    write_Bucket ( struct Bucket * src );
+void    simple_split ( struct Bucket * bucket );
+void    double_directory ( u_int8_t local_depth );
+uint8_t bit_at_k(uint32_t hash, uint8_t k);
 
-struct
-{
-    uint8_t global_depth_d;
-    uint32_t bucket_count;
-    uint32_t * table;
-} directory;
 
 struct stat s = { 0 };
+struct Directory * directory;
+
+uint8_t  bit_at_k(uint32_t hash, uint8_t k)
+{
+    return (uint8_t)((hash >> (k - 1)) & 0x01);
+}
 
 uint32_t hashd ( char * value, uint8_t d )
 {
@@ -30,56 +31,52 @@ uint32_t hashd ( char * value, uint8_t d )
 
 void init_hashing ()
 {
+    directory = (struct Directory *) malloc (sizeof(struct Directory));
 
-    if ( stat ( "./.ext_hash", &s ) == -1 )
-    {
-        mkdir ( "./.ext_hash", 0700 );
-        directory.global_depth_d = 8;
-        directory.bucket_count = 1;
-        uint32_t table_n = (uint32_t)(1 << directory.global_depth_d);
-        directory.table  = ( uint32_t * ) malloc ( table_n * sizeof ( uint32_t ) );
-        for ( int i = 0; i < table_n; directory.table[ i++ ] = directory.bucket_count );
+    if ( stat ( "./.ext_hash", &s ) != -1 )
+        system("rm -rf ./.ext_hash");
 
-        FILE * f = fopen ("./.ext_hash/directory", "wb");
-        if ( f != NULL )
-        {
-            fwrite ( &directory, sizeof ( directory ), 1, f );
-            fclose ( f );
-        }
+    mkdir ( "./.ext_hash", 0700 );
 
-        struct Bucket * bucket = (struct Bucket *) malloc ( sizeof(struct Bucket) );
-        bucket->local_depth_k = 0;
-        bucket->n_entries = 0;
-        f = fopen ("./.ext_hash/1.bucket", "wb");
-        {
-            fwrite ( bucket, sizeof ( struct Bucket ), 1, f );
-            fclose ( f );
-        }
-        free(bucket);
-    }
-    else
-    {
-        FILE * f = fopen ( ".btree/directory", "rb" );
-        if ( f != NULL )
-        {
-            fread ( &directory, sizeof ( directory ), 1, f );
-            fclose ( f );
-        }
-    }
+    directory->global_depth_d = 0;
+    directory->bucket_count = 1;
+    uint32_t table_n = (uint32_t)(1 << directory->global_depth_d);
+    directory->table  = ( uint32_t * ) malloc ( table_n * sizeof ( uint32_t ) );
+    for ( int i = 0; i < table_n; directory->table[ i++ ] = 0 );
+
+    struct Bucket * bucket = (struct Bucket *) malloc ( sizeof(struct Bucket) );
+    bucket->local_depth_k = 0;
+    bucket->n_entries = 0;
+    bucket->id = 0;
+    write_Bucket ( bucket);
+    free(bucket);
 }
 
-void insert_value( char * value )
+void insert_value ( char * value )
 {
 
-    uint32_t hash = hashd ( value, directory.global_depth_d );
-    struct Bucket * bucket = ( struct Bucket * ) malloc ( sizeof ( struct Bucket ) );
-    read_Bucket ( bucket, directory.table[ hash ] );
+    fprintf (stderr, "Adding value %s\n", value);
 
-    if ( bucket->n_entries < 255 )
+    uint32_t hash = hashd ( value, directory->global_depth_d );
+
+    fprintf (stderr, "Hash_d for global depth %d: %d\n", directory->global_depth_d, hash);
+
+    struct Bucket * bucket = ( struct Bucket * ) malloc ( sizeof ( struct Bucket ) );
+    read_Bucket ( bucket, directory->table[ hash ] );
+
+    if ( bucket->n_entries < MAX_ENTRIES )
     {
+
+        fprintf (stderr, "Enough place left, adding to bucket %d.\n", bucket->id);
+
+        // check if value already exists
+        for (int i = 0; i < bucket->n_entries; i++)
+            if(strcmp ((char*)bucket->values[i], value) == 0)
+                return;
+
         strcpy ( ( char * ) bucket->values[ bucket->n_entries ], value );
         bucket->n_entries++;
-        write_Bucket ( bucket, directory.table[ hash ] );
+        write_Bucket ( bucket );
         free ( bucket );
         return;
     }
@@ -90,125 +87,137 @@ void insert_value( char * value )
      * There's two possible cases:
      *  1. local_depth + 1 <= global_depth: only need to split the block
      *  2. local_depth + 1 > global_depth: first need to double directory size, then split.
+     *
      */
 
-    struct Bucket * split = ( struct Bucket * ) malloc ( sizeof ( struct Bucket ) );
-    uint32_t split_pos;
-    while ( bucket->n_entries == 255 )
-    {
-        bucket->local_depth_k++;
-        if ( bucket->local_depth_k <= directory.global_depth_d )
-        {
-            split_pos = simple_split ( bucket, split, hash );
+    fprintf (stderr, "NOT Enough place left, splitting.\n");
 
-            if ( split->n_entries == 255 ) {
-                write_Bucket (bucket, directory.table[hash]);
-                bucket = split;
-            }
-            else
-            {
-                write_Bucket (split, split_pos);
-            }
+    if ( bucket->local_depth_k < directory->global_depth_d )
+    {
+        simple_split ( bucket );
+        free (bucket);
+        insert_value (value);
+    }
+    else
+    {
+        double_directory (bucket->local_depth_k + 1);
+        simple_split (bucket);
+        free (bucket);
+        insert_value (value);
+    }
+}
+
+void simple_split ( struct Bucket * bucket )
+{
+
+    fprintf (stderr, "Simple split.\n");
+
+    directory->bucket_count++;
+    struct Bucket * split = ( struct Bucket * ) malloc ( sizeof ( struct Bucket ) );
+    split->id = directory->bucket_count - 1;
+    bucket->local_depth_k++;
+    split->local_depth_k = bucket->local_depth_k;
+    split->n_entries = 0;
+
+    char temp[MAX_ENTRIES][16];
+    for ( int i = 0; i < bucket->n_entries; i++ )
+    {
+        strcpy (temp[i], (char*)bucket->values[i]);
+        for ( int j = 0; j < VALUE_LEN; j++ )
+            bucket->values[i][j] = 0;
+    }
+
+    bucket->n_entries=0;
+    uint8_t bitk;
+    int x = 0, y = 0;
+
+    fprintf (stderr, "Distributing values...\n");
+    for( int i = 0; i < MAX_ENTRIES; i++)
+    {
+        bitk = bit_at_k ( hash_sequence (temp[i]), bucket->local_depth_k );
+        fprintf (stderr, "Value %s - Bit at Local Depth %d: %d.\n", temp[i], bucket->local_depth_k, bitk);
+        if (bitk == 0)
+        {
+            //goes back into original bucket
+            fprintf (stderr, "Goes back into bucket %d.\n", bucket->id);
+            strcpy ((char*)bucket->values[x], temp[i]);
+            bucket->n_entries++;
+            x++;
         }
         else
         {
-            double_directory ( bucket->local_depth_k );
-            split_pos = simple_split ( bucket, split, hash );
-
-            if ( split->n_entries == 255 ) {
-                write_Bucket (bucket, directory.table[hash]);
-                bucket = split;
-            }
-            else
-            {
-                write_Bucket (split, split_pos);
-            }
-        }
-
-    }
-
-}
-
-uint32_t simple_split( struct Bucket * bucket, struct Bucket * split, uint32_t hash_i )
-{
-
-    directory.bucket_count++;
-    char temp[255][16] = {{0}};
-    const char * null_value = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-    for ( int i = 0; i < 255; i++)
-    {
-        strcpy ((char *)temp[i], (char *)bucket->values[i]);
-        strcpy ((char *)bucket->values[i], null_value);
-    }
-
-    // redistribute
-    bucket->n_entries = 0;
-    uint8_t k = bucket->local_depth_k;
-    uint32_t x = 0, y = 0;
-    for ( int i = 0; i < 255; i++)
-    {
-        uint32_t h = hash_sequence (temp[i]);
-        uint32_t bit = (h >> (k + 1)) & 0x01;
-
-        switch (bit)
-        {
-            case 0:
-                strcpy ((char *)bucket->values[x], (char *)temp[i]);
-                x++;
-                bucket->n_entries++;
-                break;
-            case 1:
-                strcpy ((char *)split->values[y], (char *)temp[i]);
-                y++;
-                split->n_entries++;
-                break;
-            default:
-                continue;
+            //goes into split
+            fprintf (stderr, "Goes into new bucket %d.\n", split->id);
+            strcpy ((char*)split->values[y], temp[i]);
+            split->n_entries++;
+            y++;
         }
     }
 
-    bucket->local_depth_k++;
-    split->local_depth_k = bucket->local_depth_k;
-    hash_i = hash_i | ( 1 << (bucket->local_depth_k - 1));
-    directory.table[hash_i] = directory.bucket_count;
-    return directory.bucket_count;
+    //finally, determine splits position in the directory
+    if ( split-> n_entries != 0 )
+    {
+        uint32_t hash = hashd ( (char*)split->values[0], split->local_depth_k );
+        directory->table[hash] = split->id;
+        fprintf (stderr, "Table position of new bucket %d.\n", hash);
+    }
+    else
+    {
+        uint32_t hash = hashd ( (char*)bucket->values[0], bucket->local_depth_k );
+        hash = hash | (0x01 << (bucket->local_depth_k - 1));
+        directory->table[hash] = split->id;
+        fprintf (stderr, "Table position of new bucket %d.\n", hash);
+    }
+
+    write_Bucket (split);
+    write_Bucket (bucket);
+    free (split);
 }
 
 void double_directory ( u_int8_t local_depth )
 {
-    uint8_t old_d = directory.global_depth_d;
+    fprintf (stderr, "Doubling directory size.\n");
+
+    uint8_t old_d = directory->global_depth_d;
     uint32_t table_n = (uint32_t)(1 << old_d);
     uint32_t * temp_table = ( uint32_t * ) malloc ( table_n * sizeof ( uint32_t ) );
 
     // temporarily store the values of the table before expanding it
     for (int i = 0; i < table_n; i++)
-        temp_table[i] = directory.table[i];
+        temp_table[i] = directory->table[i];
 
-    while (directory.global_depth_d < local_depth )
+    while (directory->global_depth_d < local_depth )
     {
-        directory.global_depth_d = directory.global_depth_d << 1;
+        if ( directory->global_depth_d == 0 )
+        {
+            directory->global_depth_d += 1;
+            continue;
+        }
+        directory->global_depth_d = directory->global_depth_d << 1;
     }
 
-    free (directory.table);
-    directory.table = ( uint32_t * ) malloc ( (1 << directory.global_depth_d) * sizeof ( uint32_t ) );
+    free (directory->table);
+    directory->table = ( uint32_t * ) malloc ( (1 << directory->global_depth_d) * sizeof ( uint32_t ) );
 
     // copy back the old values to the bigger table
     for (int i = 0; i < table_n; i++)
-        directory.table[i] = temp_table[i];
+        directory->table[i] = temp_table[i];
 
     free (temp_table);
 
     // map the new slots
-    for ( int i = table_n; i < ( 1 << directory.global_depth_d); i++ )
+    for ( int i = table_n; i < ( 1 << directory->global_depth_d); i++ )
     {
-        directory.table[i] = directory.table[i % table_n];
+        directory->table[i] = directory->table[i % table_n];
     }
+
+    fprintf (stderr, "New size: %d (Global Depth: %d)\n", (1 << directory->global_depth_d), directory->global_depth_d );
 }
 
 void read_Bucket ( struct Bucket * des, int k )
 {
     char path[50];
-    sprintf ( path, "./.btree/%d.bucket", k );
+    sprintf ( path, "./.ext_hash/%d.bucket", k );
     FILE * f = fopen ( path, "rb" );
     if ( f != NULL )
     {
@@ -217,10 +226,10 @@ void read_Bucket ( struct Bucket * des, int k )
     }
 }
 
-void write_Bucket ( struct Bucket * src, int k )
+void write_Bucket ( struct Bucket * src )
 {
     char path[50];
-    sprintf ( path, "./.btree/%d.bucket", k );
+    sprintf ( path, "./.ext_hash/%d.bucket", src->id );
     FILE * f = fopen ( path, "wb" );
     if ( f != NULL )
     {

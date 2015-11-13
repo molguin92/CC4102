@@ -9,6 +9,6 @@
 
 #endif //TAREA2_HASH_H
 
-#define VALUE_LEN 16
+#define VALUE_LEN 15
 
 uint32_t hash_sequence(char * sequence);
