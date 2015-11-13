@@ -32,7 +32,7 @@ struct Header * init_BTREE ()
         struct Node * root = ( struct Node * ) malloc ( sizeof ( struct Node ) );
         root->n_entries = 0;
         root->node_k = 1;
-        write_node ( root, root->node_k );
+        write_node ( root );
         free ( root );
     }
     else
@@ -45,6 +45,7 @@ struct Header * init_BTREE ()
         }
     }
 
+    return Btree;
 }
 
 
@@ -75,12 +76,12 @@ void split_node ( struct Node * src, struct Node * sibling, char ** median )
     sibling->n_entries = B/2 - 1;
 }
 
-int insert_value_at_leaf ( char * value, int node_k, int parent_k )
+int insert_value_at_leaf ( char * value, uint32_t node_k, uint32_t parent_k )
 {
 
     /* if handed the header of the tree, give the value to the root */
 
-    if ( node_k < 0 )
+    if ( node_k <= 0 )
     {
         struct Header * h = ( struct Header * ) malloc ( sizeof (struct Header ) );
         FILE * f = fopen ( "./.btree/header", "rb" );
@@ -116,7 +117,7 @@ int insert_value_at_leaf ( char * value, int node_k, int parent_k )
      * Keep node ordered!
      */
     if ( node->n_entries < B )
-        insert_ordered ( value, node );
+        insert_ordered ( value, node, 0, 0 );
 
     if ( node->n_entries == B ) // need to split
     {
@@ -126,7 +127,8 @@ int insert_value_at_leaf ( char * value, int node_k, int parent_k )
         split_node (node, sibling, median);
         Btree->n_nodes++;
         sibling->node_k = Btree->n_nodes;
-        write_node (sibling, sibling->node_k);
+        write_node ( sibling );
+        write_node ( node );
 
         insert_split (parent_k, *median, node_k, sibling->node_k);
 
@@ -136,13 +138,13 @@ int insert_value_at_leaf ( char * value, int node_k, int parent_k )
     }
     else
     {
-        write_node ( node, node_k );
+        write_node ( node );
         free ( node );
         return node_k;
     }
 }
 
-int insert_ordered ( char * new, struct Node (  * des) )
+uint32_t insert_ordered ( char * new, struct Node * des, uint32_t left, uint32_t right )
 {
     /* inserts the value "new" into the node,
      * while maintaining the order of the values.
@@ -191,9 +193,10 @@ void read_node ( struct Node * des, int node_k )
     }
 }
 
-void write_node ( struct Node * src, int node_k )
+void write_node ( struct Node * src )
 {
     char path[50];
+    uint32_t node_k = src->node_k;
     sprintf ( path, "./.btree/%d.node", node_k );
     FILE * f = fopen ( path, "wb" );
     if ( f != NULL )
@@ -217,13 +220,29 @@ uint32_t find_subtree ( char * value, struct Node * node )
     return node->subtrees[i];
 }
 
-void insert_split ( int parent_k, char * value, int left, int right )
+void insert_split ( int parent_k, char * value, uint32_t left, uint32_t right )
 {
 
     // inserts a value from a split node into its parent.
+    struct Node * node = ( struct Node * ) malloc ( sizeof ( struct Node ) );
+
+    /* if parent is the header, we need to create a new root */
+    if ( parent_k <= 0 )
+    {
+        strcpy ((char *) node->entries[0], value);
+        node->n_entries = 1;
+        node->subtrees[0] = left;
+        node->subtrees[1] = right;
+        Btree->n_nodes++;
+        node->node_k = Btree->n_nodes;
+        write_node (node);
+        Btree->root = node->node_k;
+        free(node);
+        return;
+    }
+
 
     /* read data from node file */
-    struct Node * node = ( struct Node * ) malloc ( sizeof ( struct Node ) );
     read_node ( node, parent_k );
 
     if ( node->n_entries < B )

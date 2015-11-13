@@ -42,18 +42,18 @@ struct Header
 
 struct Header * init_BTREE ();
 
-int insert_value_at_leaf ( char * value, int node_k, int parent_k );
+int insert_value_at_leaf ( char * value, uint32_t node_k, uint32_t parent_k );
 
-int insert_ordered ( char * new, struct Node * des );
+uint32_t insert_ordered ( char * new, struct Node * des, uint32_t left, uint32_t right );
 
 void read_node ( struct Node * des, int node_k );
 
-void write_node ( struct Node * src, int node_k );
+void write_node ( struct Node * src );
 
 uint32_t find_subtree ( char * value, struct Node * node );
 
 void split_node ( struct Node * src, struct Node * sibling, char ** median );
 
-void insert_split( int parent_k, char * value, int left, int right );
+void insert_split ( int parent_k, char * value, uint32_t left, uint32_t right );
 
 void close_tree();
