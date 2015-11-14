@@ -30,4 +30,4 @@ struct Directory
 void init_hashing ();
 void put_value ( char * value );
 int  search ( char * value );
-int pop_value ( char * value );
+void pop_random_value ( char * pop );

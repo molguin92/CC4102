@@ -6,14 +6,18 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include "ext_hashing.h"
 #include "hash.h"
 
 void    read_Bucket ( struct Bucket * des, int k );
 void    write_Bucket ( struct Bucket * src );
+void    delete_Bucket ( struct Bucket * src );
 void    simple_split ( struct Bucket * bucket );
 void    double_directory ( u_int8_t local_depth );
 uint8_t bit_at_k(uint32_t hash, uint8_t k);
+void    collapse_buckets ( uint32_t b_index, struct Bucket * bucket );
 
 
 struct stat s = { 0 };
@@ -69,6 +73,33 @@ int search ( char * value )
             return 1;
 
     return 0;
+}
+
+
+void pop_random_value ( char * pop )
+{
+    srand ( time(NULL) );
+
+    struct Bucket * bucket = ( struct Bucket * ) malloc ( sizeof ( struct Bucket ) );
+    uint32_t b_index, index;
+
+    while (bucket->n_entries == 0)
+    {
+        b_index = ( uint32_t ) ( rand () / ( RAND_MAX / ( ( 1 << directory->global_depth_d) + 1) ));
+        read_Bucket ( bucket, directory->table[ b_index ] ); // random bucket
+    }
+
+    index = ( uint32_t ) ( rand () / ( RAND_MAX / ( bucket->n_entries + 1) )); // random value
+    strcpy (pop, (char*)bucket->values[index]);
+    strcpy ((char*)bucket->values[index], (char*)bucket->values[bucket->n_entries - 1]);
+    bucket->n_entries--;
+
+    for ( int i = 0; i < VALUE_LEN; i++ )
+        bucket->values[bucket->n_entries][i] = 0;
+
+    write_Bucket (bucket);
+
+    collapse_buckets ( b_index, bucket ); // collapse two buckets into one if possible.
 }
 
 void put_value ( char * value )
@@ -255,4 +286,62 @@ void write_Bucket ( struct Bucket * src )
         fwrite ( src, sizeof ( struct Bucket ), 1, f );
         fclose ( f );
     }
+}
+
+void delete_Bucket ( struct Bucket * src )
+{
+    char path[50];
+    sprintf ( path, "./.ext_hash/%d.bucket", src->id );
+    unlink (path);
+}
+
+void collapse_buckets ( uint32_t b_index, struct Bucket * bucket )
+{
+    // open "sister" bucket:
+    uint8_t bitk = bit_at_k (b_index, bucket->local_depth_k);
+    struct Bucket * sister = ( struct Bucket * ) malloc ( sizeof ( struct Bucket ) );
+
+    if ( bitk == 0 )
+    {
+        b_index = b_index | (0x01 << (bucket->local_depth_k - 1));
+
+        if ( directory->table[b_index] == bucket->id )
+            return; // no sister bucket
+
+        read_Bucket (sister, directory->table[b_index]);
+    }
+    else
+    {
+        b_index = b_index / 2;
+
+        if ( directory->table[b_index] == bucket->id )
+            return; // no sister bucket
+
+        read_Bucket (sister, directory->table[b_index]);
+        struct Bucket * temp = sister;
+        sister = bucket;
+        bucket = temp;
+    }
+
+
+    if ( (sister->n_entries + bucket->n_entries) > MAX_ENTRIES )
+        return;
+
+
+    for ( int i = 0; i < sister->n_entries; i ++ )
+    {
+        strcpy ( (char *)bucket->values[bucket->n_entries], (char *)sister->values[i]);
+        bucket->n_entries++;
+    }
+
+    bucket->local_depth_k--;
+    write_Bucket (bucket);
+
+    directory->table[b_index] = bucket->id;
+
+    free (bucket);
+    delete_Bucket (sister);
+    free (sister);
+
+
 }
