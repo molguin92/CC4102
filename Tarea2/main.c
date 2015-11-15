@@ -4,19 +4,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "btree.h"
-#include "ext_hashing.h"
+#include "lin_hashing.h"
 
 int main ()
 {
     fprintf (stdout, "Testing insert into hash.\n");
-    init_hashing ();
-    put_value ( "GGGGGGGGGGGGGGG" );
-    put_value ( "CCCCCCCCCCCCCCC" );
-    put_value ( "AAAAAAAAAAAAAAA" );
-    put_value ( "TTTTTTTTTTTTTTT" );
-
-    int a = search ("AAAAAAAAAAAAAAA");
-    if ( a == 1 )
-        printf ("A was found.");
+    init_linhashing ();
+    put_value_linhashing ( "GGGGGGGGGGGGGGG" );
+    put_value_linhashing ( "CCCCCCCCCCCCCCC" );
+    put_value_linhashing ( "AAAAAAAAAAAAAAA" );
+    put_value_linhashing ( "TTTTTTTTTTTTTTT" );
 }

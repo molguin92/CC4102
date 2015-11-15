@@ -117,7 +117,7 @@ int insert_value_at_leaf ( char * value, uint32_t node_k, uint32_t parent_k )
      * Keep node ordered!
      */
     if ( node->n_entries < B )
-        insert_ordered ( value, node, 0, 0 );
+        insert_ordered ( value, node, 0 );
 
     if ( node->n_entries == B ) // need to split
     {
@@ -144,7 +144,7 @@ int insert_value_at_leaf ( char * value, uint32_t node_k, uint32_t parent_k )
     }
 }
 
-uint32_t insert_ordered ( char * new, struct Node * des, uint32_t left, uint32_t right )
+uint32_t insert_ordered ( char * new, struct Node * des, uint32_t right )
 {
     /* inserts the value "new" into the node,
      * while maintaining the order of the values.
@@ -176,6 +176,19 @@ uint32_t insert_ordered ( char * new, struct Node * des, uint32_t left, uint32_t
     }
 
     des->n_entries++;
+
+    // fix pointers now:
+
+    uint32_t temp_s = des->subtrees[i + 1];
+    des->subtrees[i + 1] = right;
+
+    for ( j = i + 2; j < B + 1; j++ )
+    {
+        uint32_t temp_t = des->subtrees[j];
+        des->subtrees[j] = temp_s;
+        temp_s = temp_t;
+    }
+
     return i;
 
 }
@@ -248,6 +261,25 @@ void insert_split ( int parent_k, char * value, uint32_t left, uint32_t right )
     if ( node->n_entries < B )
     {
         // enough space, just insert
+        insert_ordered ( value, node, right );
+        return;
+    }
+    else
+    {
+        // need to split again...
+        struct Node * sibling = ( struct Node * ) malloc ( sizeof ( struct Node ) );
+        char * median[16] = {0};
+
+        split_node (node, sibling, median);
+        Btree->n_nodes++;
+        sibling->node_k = Btree->n_nodes;
+        write_node ( sibling );
+        write_node ( node );
+        uint32_t sk = sibling->node_k;
+        free(sibling);
+        free (node);
+
+        insert_split (parent_k, *median, parent_k, sk);
     }
 
 }

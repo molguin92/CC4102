@@ -29,11 +29,12 @@ uint32_t convert_DNAChar(char c)
 }
 
 uint32_t hash_sequence ( char * sequence )
+// TODO: FIX THIS SHIT
 {
     uint32_t ret = 0x00000000;
     uint8_t i;
 
-    for ( i = 0; i < VALUE_LEN; i++)
+    for ( i = 0; i < VALUE_LEN - 1; i++)
     {
         uint32_t c = convert_DNAChar (sequence[i]);
         ret = ret | (c << ((VALUE_LEN - 1 - i) * 2));

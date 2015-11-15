@@ -29,7 +29,7 @@ struct Node
 {
     uint32_t node_k;
     uint32_t n_entries;
-    uint32_t subtrees[205];
+    uint32_t subtrees[B + 1];
     uint8_t  entries[B][VALUE_SIZE];
 };
 
@@ -44,7 +44,7 @@ struct Header * init_BTREE ();
 
 int insert_value_at_leaf ( char * value, uint32_t node_k, uint32_t parent_k );
 
-uint32_t insert_ordered ( char * new, struct Node * des, uint32_t left, uint32_t right );
+uint32_t insert_ordered ( char * new, struct Node * des, uint32_t right );
 
 void read_node ( struct Node * des, int node_k );
 

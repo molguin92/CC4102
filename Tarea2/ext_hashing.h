@@ -11,7 +11,7 @@
 
 #define MAX_ENTRIES 3
 
-struct Bucket
+struct BucketExt
 {
     uint32_t id;
     uint8_t local_depth_k;
@@ -27,7 +27,7 @@ struct Directory
 };
 
 
-void init_hashing ();
-void put_value ( char * value );
-int  search ( char * value );
-void pop_random_value ( char * pop );
+void init_exthashing ();
+void put_value_exthashing ( char * value );
+int  search_exthashing ( char * value );
+void pop_random_value_exthashing ( char * pop );
