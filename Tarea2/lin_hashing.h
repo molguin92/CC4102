@@ -10,7 +10,7 @@
 #endif //TAREA2_LIN_HASHING_H
 
 #define INIT_M 2
-#define MAX_ENTRIES 2
+#define MAX_ENTRIES 1
 
 
 

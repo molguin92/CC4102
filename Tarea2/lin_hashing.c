@@ -66,11 +66,11 @@ uint32_t address_value ( char * value )
 {
     uint32_t H     = hash_sequence ( value );
     fprintf ( stderr, "Hash of %s: %u\n", value, H);
-    uint32_t index = H % ( N * ( 1 << L ) );
+    uint32_t index = H % ( INIT_M * ( 1 << L ) );
     fprintf (stderr, "Index: %d\n", index);
 
     if ( index < S )
-        index = H % ( N * ( 1 << ( L + 1 ) ) );
+        index = H % ( INIT_M * ( 1 << ( L + 1 ) ) );
 
     return index;
 }
@@ -205,24 +205,23 @@ void split ()
 
     split->primary->n_entries = 0;
     split->primary->id = N;
+    N++;
     split->primary->overflow = 0;
     uint32_t old_s = S;
 
-    if ( S == ( N * ( 1 << L ) ) )
+    S++;
+    if ( S == ( INIT_M * ( 1 << L ) ) )
     {
         S = 0;
         L++;
     }
-    else
-        S++;
-
-    N++;
 
 
     // redistribute elements
     size_t len;
     char ** elements;
     get_elements_bucket ( bucket, &elements, &len );
+    delete_BucketLin ( bucket );
     free(bucket);
     bucket = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
     bucket->primary = ( struct PrimaryBucket * ) malloc ( sizeof(struct PrimaryBucket) );

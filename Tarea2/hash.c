@@ -10,16 +10,16 @@ uint32_t convert_DNAChar(char c)
     switch (c)
     {
         case ('G'):
-            ret = 0x00000000;
+            ret = 0x00;
             break;
-        case ( 'C'):
-            ret = 0x00000001;
+        case ('C'):
+            ret = 0x01;
             break;
         case ('A'):
-            ret = 0x00000002;
+            ret = 0x02;
             break;
         case ('T'):
-            ret = 0x00000003;
+            ret = 0x03;
             break;
         default:
             break;
@@ -29,7 +29,6 @@ uint32_t convert_DNAChar(char c)
 }
 
 uint32_t hash_sequence ( char * sequence )
-// TODO: FIX THIS SHIT
 {
     uint32_t ret = 0x00000000;
     uint8_t i;
@@ -37,7 +36,8 @@ uint32_t hash_sequence ( char * sequence )
     for ( i = 0; i < VALUE_LEN - 1; i++)
     {
         uint32_t c = convert_DNAChar (sequence[i]);
-        ret = ret | (c << ((VALUE_LEN - 1 - i) * 2));
+        c = c << (( VALUE_LEN - 2 - i ) * 2);
+        ret += c;
     }
 
     return ret;
