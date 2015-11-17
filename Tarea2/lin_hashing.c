@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 #include "lin_hashing.h"
 #include "hash.h"
 
@@ -24,9 +25,15 @@ int      put_value_bucket ( char * value, struct BucketLin * des );
 
 void     add_overflow_bucket ( struct BucketLin * bucket );
 
+void     delete_overflow_bucket ( struct BucketLin * bucket );
+
 void     split ();
 
+void     collapse();
+
 void     get_elements_bucket ( struct BucketLin * bucket, char *** des, size_t * len );
+
+void     free_bucket ( struct BucketLin * bucket );
 
 uint32_t N;
 uint32_t S;
@@ -56,7 +63,7 @@ void init_linhashing ()
         bucket->primary->n_entries = 0;
         bucket->primary->overflow  = 0;
         write_BucketLin ( bucket );
-        free ( bucket );
+        free_bucket ( bucket );
     }
 
 }
@@ -65,9 +72,7 @@ void init_linhashing ()
 uint32_t address_value ( char * value )
 {
     uint32_t H     = hash_sequence ( value );
-    fprintf ( stderr, "Hash of %s: %u\n", value, H);
     uint32_t index = H % ( INIT_M * ( 1 << L ) );
-    fprintf (stderr, "Index: %d\n", index);
 
     if ( index < S )
         index = H % ( INIT_M * ( 1 << ( L + 1 ) ) );
@@ -78,32 +83,35 @@ uint32_t address_value ( char * value )
 void put_value_linhashing ( char * value )
 {
 
-    fprintf ( stderr, "Putting value '%s' into hash table.\n", value );
 
     uint32_t a = address_value ( value );
 
-    fprintf ( stderr, "Address of value: %d\n", a);
 
     struct BucketLin * bucket = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
     read_BucketLin ( bucket, a );
 
     int of = put_value_bucket ( value, bucket );
     write_BucketLin (bucket);
-    free ( bucket );
+    free_bucket ( bucket );
     if ( of ) // overflow
         split ();
 }
 
 int put_value_bucket ( char * value, struct BucketLin * des )
 {
-    fprintf ( stderr, "Putting value '%s' into bucket %d.\n", value, des->primary->id );
+
+    size_t len;
+    char ** elements;
+    get_elements_bucket ( des, &elements, &len );
+    for ( int i = 0; i < len; i++ )
+        if ( strcmp ( elements[i], value ) == 0 )
+            return 0;
 
     int first_overflow = 0;
 
     if ( des->primary->overflow > 0 )
     {
 
-        fprintf ( stderr, "Bucket has overflow pages.\n" );
 
         if ( des->overflow[ des->primary->overflow - 1 ]->n_entries == MAX_ENTRIES )
             add_overflow_bucket ( des );
@@ -116,7 +124,6 @@ int put_value_bucket ( char * value, struct BucketLin * des )
     {
         if ( des->primary->n_entries == MAX_ENTRIES )
         {
-            fprintf ( stderr, "Bucket is full, first overflow!\n");
 
             // first overflow
             first_overflow++;
@@ -139,7 +146,6 @@ int put_value_bucket ( char * value, struct BucketLin * des )
 void add_overflow_bucket ( struct BucketLin * bucket )
 {
 
-    fprintf ( stderr, "Adding overflow bucket to bucket %d\n", bucket->primary->id );
 
     struct OverflowBucket ** temp = ( struct OverflowBucket ** ) malloc (
             sizeof ( struct OverflowBucket ) * ( bucket->primary->overflow + 1 ));
@@ -150,24 +156,45 @@ void add_overflow_bucket ( struct BucketLin * bucket )
     if ( bucket->primary->overflow > 0 )
     {
         memcpy ( temp, bucket->overflow, sizeof ( struct OverflowBucket ) * bucket->primary->overflow );
+        temp[bucket->primary->overflow] = ( struct OverflowBucket * ) malloc (sizeof ( struct OverflowBucket ));
         free ( bucket->overflow );
     }
 
-    temp[ bucket->primary->overflow ]->n_entries = 0;
+    (temp[ bucket->primary->overflow ])->n_entries = 0;
     bucket->overflow                             = ( struct OverflowBucket ** ) malloc (
             sizeof ( struct OverflowBucket ) * ( bucket->primary->overflow + 1 ));
 
     memcpy ( bucket->overflow, temp, sizeof ( struct OverflowBucket ) * ( bucket->primary->overflow + 1 ) );
     bucket->primary->overflow++;
+    for ( int i = 0; i < bucket->primary->overflow; i++ )
+        free(temp[i]);
     free ( temp );
 
-    fprintf ( stderr, "Succesfully added overflow bucket. \n");
 }
 
+void     delete_overflow_bucket ( struct BucketLin * bucket )
+{
+
+
+    struct OverflowBucket ** temp = ( struct OverflowBucket ** ) malloc (
+            sizeof ( struct OverflowBucket ) * ( bucket->primary->overflow - 1 ));
+
+    for ( int i = 0; i < bucket->primary->overflow - 1; i++ )
+    {
+        temp[i] = ( struct OverflowBucket * ) malloc (sizeof ( struct OverflowBucket ));
+        memcpy ( temp[i], bucket->overflow[i], sizeof(struct OverflowBucket) );
+    }
+
+    free(bucket->overflow);
+    bucket->overflow = ( struct OverflowBucket ** ) malloc (
+            sizeof ( struct OverflowBucket ) * ( bucket->primary->overflow - 1 ));
+    memcpy ( bucket->overflow, temp, sizeof(struct OverflowBucket) * (bucket->primary->overflow - 1));
+    bucket->primary->overflow--;
+    free ( temp );
+}
 
 void get_elements_bucket ( struct BucketLin * bucket, char *** des, size_t * len )
 {
-    fprintf ( stderr, "Getting all elements from bucket %d\n", bucket->primary->id );
 
     *len = bucket->primary->n_entries;
     for ( int i = 0; i < bucket->primary->overflow; i++ )
@@ -185,7 +212,6 @@ void get_elements_bucket ( struct BucketLin * bucket, char *** des, size_t * len
     int counter = bucket->primary->n_entries;
     for ( int i = 0; i < bucket->primary->overflow; i++ )
     {
-        fprintf ( stderr, "Getting all elements from overflow %d\n", i );
         for( int j = 0; j < bucket->overflow[i]->n_entries; j++ )
         {
             (*des)[counter] = (char *) malloc ( VALUE_LEN );
@@ -197,7 +223,6 @@ void get_elements_bucket ( struct BucketLin * bucket, char *** des, size_t * len
 
 void split ()
 {
-    fprintf ( stderr, "Splitting\n" );
     struct BucketLin * bucket = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
     struct BucketLin * split  = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
     split->primary = ( struct PrimaryBucket * ) malloc ( sizeof (struct PrimaryBucket));
@@ -222,7 +247,7 @@ void split ()
     char ** elements;
     get_elements_bucket ( bucket, &elements, &len );
     delete_BucketLin ( bucket );
-    free(bucket);
+    free_bucket (bucket);
     bucket = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
     bucket->primary = ( struct PrimaryBucket * ) malloc ( sizeof(struct PrimaryBucket) );
 
@@ -238,25 +263,138 @@ void split ()
             put_value_bucket ( elements[i], bucket);
         else if ( a == split->primary->id)
             put_value_bucket ( elements[i], split );
-        else
-            fprintf (stderr, "Wrong bucket, wtf.");
 
+        free (elements[i]);
     }
 
     write_BucketLin ( bucket );
     write_BucketLin ( split );
-    free (bucket);
-    free (split);
+    free_bucket (bucket);
+    free_bucket (split);
+    free (elements);
+
+}
+
+void collapse()
+{
+    N--;
+    struct BucketLin * bucket = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
+    struct BucketLin * split  = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
+    uint32_t old_s = S;
+    read_BucketLin ( bucket, S - 1 );
+    read_BucketLin ( split, N );
+
+    if ( S > 0 )
+        S--;
+    else
+    {
+        L--;
+        S = (uint32_t)(( INIT_M * ( 1 << L ) ) - 1);
+    }
+
+    // join elements
+    size_t len1;
+    size_t len2;
+    char ** elements1;
+    char ** elements2;
+    get_elements_bucket ( bucket, &elements1, &len1 );
+    get_elements_bucket ( split, &elements2, &len2 );
+    delete_BucketLin ( bucket );
+    delete_BucketLin ( split );
+    free_bucket ( bucket );
+    free_bucket ( split );
+    bucket = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
+    bucket->primary = ( struct PrimaryBucket * ) malloc ( sizeof(struct PrimaryBucket) );
+    bucket->primary->n_entries = 0;
+    bucket->primary->overflow = 0;
+    bucket->primary->id = old_s;
+
+    for ( int i = 0; i < len1; i++ )
+    {
+        uint32_t a = address_value ( elements1[i] );
+        if ( a == old_s )
+            put_value_bucket ( elements1[i], bucket);
+
+        free (elements1[i]);
+    }
+
+    for ( int i = 0; i < len2; i++ )
+    {
+        uint32_t a = address_value ( elements2[i] );
+        if ( a == old_s )
+            put_value_bucket ( elements2[i], bucket);
+
+        free (elements2[i]);
+    }
+
+    write_BucketLin ( bucket );
+    free_bucket (bucket);
+    free(elements1);
+    free (elements2);
 }
 
 int search_linhashing ( char * value )
 {
+    uint32_t address = address_value ( value );
+    struct BucketLin * bucket = (struct BucketLin *) malloc ( sizeof (struct BucketLin));
+    read_BucketLin ( bucket, address );
+
+    size_t len;
+    char ** elements;
+    get_elements_bucket ( bucket, &elements, &len );
+
+    for ( int i = 0; i < len; i++ )
+        if ( strcmp ( value, elements[i] ) == 0 )
+            return 1;
+
     return 0;
 }
 
 void pop_random_value_linhashing ( char * pop )
 {
+    srand ( time(NULL) );
 
+    struct BucketLin * bucket = ( struct BucketLin * ) malloc ( sizeof ( struct BucketLin ) );
+    bucket->primary = (struct PrimaryBucket *) malloc (sizeof(struct PrimaryBucket));
+    uint32_t b_index;
+
+    do
+    {
+        b_index = ( uint32_t ) ( rand () % N );
+        read_BucketLin ( bucket, b_index ); // random bucket
+    }
+    while (bucket->primary->n_entries == 0);
+
+    if ( bucket->primary->overflow > 0 )
+    {
+        uint32_t iover = (uint32_t)(bucket->primary->overflow - 1);
+        uint32_t ientry = bucket->overflow[iover]->n_entries;
+
+        strcpy ( pop, (char *)bucket->overflow[iover]->entries[ientry] );
+
+        for ( int i = 0; i < VALUE_LEN; i++ )
+            bucket->overflow[iover]->entries[ientry][i] = 0;
+
+        bucket->overflow[iover]->n_entries--;
+        if ( bucket->overflow[iover]->n_entries == 0 )
+            delete_overflow_bucket (bucket);
+
+        write_BucketLin (bucket);
+    }
+    else
+    {
+        strcpy ( pop, (char *)bucket->primary->entries[bucket->primary->n_entries - 1] );
+        for ( int i = 0; i < VALUE_LEN; i++ )
+            bucket->primary->entries[bucket->primary->n_entries - 1][i] = 0;
+
+        bucket->primary->n_entries--;
+        write_BucketLin (bucket);
+
+        if ( bucket->primary->n_entries == 0)
+            collapse ();
+    }
+
+    free_bucket (bucket);
 }
 
 
@@ -290,7 +428,6 @@ void read_BucketLin ( struct BucketLin * des, int k )
         }
     }
 
-    fprintf ( stderr, "Done\n");
 }
 
 void write_BucketLin ( struct BucketLin * src )
@@ -335,4 +472,15 @@ void delete_BucketLin ( struct BucketLin * src )
         }
 
     }
+}
+
+void free_bucket ( struct BucketLin * bucket )
+{
+
+    for ( int i = 0; i < bucket->primary->overflow; i++ )
+        free (bucket->overflow[i]);
+
+    free (bucket->primary);
+    //free (bucket->overflow);
+    free (bucket);
 }

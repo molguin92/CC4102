@@ -9,7 +9,6 @@
 #include <time.h>
 #include <unistd.h>
 #include "ext_hashing.h"
-#include "hash.h"
 
 void    read_Bucket ( struct BucketExt * des, int k );
 void    write_Bucket ( struct BucketExt * src );
@@ -22,6 +21,9 @@ void    collapse_buckets ( uint32_t b_index, struct BucketExt * bucket );
 
 struct stat s = { 0 };
 struct Directory * directory;
+
+uint32_t t_reads  = 0;
+uint32_t t_writes = 0;
 
 uint8_t  bit_at_k(uint32_t hash, uint8_t k)
 {
@@ -44,6 +46,7 @@ void init_exthashing ()
 
     directory->global_depth_d = 0;
     directory->bucket_count = 1;
+    directory->n_buckets = 1;
     uint32_t table_n = (uint32_t)(1 << directory->global_depth_d);
     directory->table  = ( uint32_t * ) malloc ( table_n * sizeof ( uint32_t ) );
     for ( int i = 0; i < table_n; directory->table[ i++ ] = 0 );
@@ -59,11 +62,8 @@ void init_exthashing ()
 
 int search_exthashing ( char * value )
 {
-    fprintf (stderr, "Searching for value %s\n", value);
 
     uint32_t hash = hashd ( value, directory->global_depth_d );
-
-    fprintf (stderr, "Hash_d for global depth %d: %d\n", directory->global_depth_d, hash);
 
     struct BucketExt * bucket = ( struct BucketExt * ) malloc ( sizeof ( struct BucketExt ) );
     read_Bucket ( bucket, directory->table[ hash ] );
@@ -88,7 +88,6 @@ void pop_random_value_exthashing ( char * pop )
     {
         b_index = ( uint32_t ) ( rand () / ( RAND_MAX / ( ( 1 << (directory->global_depth_d - 1)) + 1) ));
         read_Bucket ( bucket, directory->table[ b_index ] ); // random bucket
-        fprintf (stderr, "Random bucket: %d\n", bucket->id);
     }
 
     index = ( uint32_t ) ( rand () / ( RAND_MAX / ( bucket->n_entries + 1) )); // random value
@@ -104,14 +103,11 @@ void pop_random_value_exthashing ( char * pop )
     collapse_buckets ( b_index, bucket ); // collapse two buckets into one if possible.
 }
 
-void put_value_exthashing ( char * value )
+int put_value_exthashing ( char * value )
 {
 
-    fprintf (stderr, "Adding value %s\n", value);
-
+    //printf ( "Putting value %s in hash.\n", value );
     uint32_t hash = hashd ( value, directory->global_depth_d );
-
-    fprintf (stderr, "Hash_d for global depth %d: %d\n", directory->global_depth_d, hash);
 
     struct BucketExt * bucket = ( struct BucketExt * ) malloc ( sizeof ( struct BucketExt ) );
     read_Bucket ( bucket, directory->table[ hash ] );
@@ -119,18 +115,16 @@ void put_value_exthashing ( char * value )
     if ( bucket->n_entries < MAX_ENTRIES )
     {
 
-        fprintf (stderr, "Enough place left, adding to bucket %d.\n", bucket->id);
-
         // check if value already exists
         for (int i = 0; i < bucket->n_entries; i++)
             if(strcmp ((char*)bucket->values[i], value) == 0)
-                return;
+                return 0;
 
         strcpy ( ( char * ) bucket->values[ bucket->n_entries ], value );
         bucket->n_entries++;
         write_Bucket ( bucket );
         free ( bucket );
-        return;
+        return 1;
     }
 
     /*
@@ -142,29 +136,27 @@ void put_value_exthashing ( char * value )
      *
      */
 
-    fprintf (stderr, "NOT Enough place left, splitting.\n");
 
     if ( bucket->local_depth_k < directory->global_depth_d )
     {
         simple_split ( bucket );
         free (bucket);
-        put_value_exthashing ( value );
+        return put_value_exthashing ( value );
     }
     else
     {
         double_directory (bucket->local_depth_k + 1);
         simple_split (bucket);
         free (bucket);
-        put_value_exthashing ( value );
+        return put_value_exthashing ( value );
     }
 }
 
 void simple_split ( struct BucketExt * bucket )
 {
 
-    fprintf (stderr, "Simple split.\n");
-
     directory->bucket_count++;
+    directory->n_buckets++;
     struct BucketExt * split = ( struct BucketExt * ) malloc ( sizeof ( struct BucketExt ) );
     split->id = directory->bucket_count - 1;
     bucket->local_depth_k++;
@@ -183,15 +175,12 @@ void simple_split ( struct BucketExt * bucket )
     uint8_t bitk;
     int x = 0, y = 0;
 
-    fprintf (stderr, "Distributing values...\n");
     for( int i = 0; i < MAX_ENTRIES; i++)
     {
         bitk = bit_at_k ( hash_sequence (temp[i]), bucket->local_depth_k );
-        fprintf (stderr, "Value %s - Bit at Local Depth %d: %d.\n", temp[i], bucket->local_depth_k, bitk);
         if (bitk == 0)
         {
             //goes back into original bucket
-            fprintf (stderr, "Goes back into bucket %d.\n", bucket->id);
             strcpy ((char*)bucket->values[x], temp[i]);
             bucket->n_entries++;
             x++;
@@ -199,7 +188,6 @@ void simple_split ( struct BucketExt * bucket )
         else
         {
             //goes into split
-            fprintf (stderr, "Goes into new bucket %d.\n", split->id);
             strcpy ((char*)split->values[y], temp[i]);
             split->n_entries++;
             y++;
@@ -211,14 +199,12 @@ void simple_split ( struct BucketExt * bucket )
     {
         uint32_t hash = hashd ( (char*)split->values[0], split->local_depth_k );
         directory->table[hash] = split->id;
-        fprintf (stderr, "Table position of new bucket %d.\n", hash);
     }
     else
     {
         uint32_t hash = hashd ( (char*)bucket->values[0], bucket->local_depth_k );
         hash = hash | (0x01 << (bucket->local_depth_k - 1));
         directory->table[hash] = split->id;
-        fprintf (stderr, "Table position of new bucket %d.\n", hash);
     }
 
     write_Bucket (split);
@@ -232,41 +218,28 @@ void double_directory ( u_int8_t local_depth )
     while (directory->global_depth_d < local_depth )
     {
 
-        fprintf (stderr, "Doubling directory size.\n");
-
         uint8_t old_d = directory->global_depth_d;
         uint32_t table_n = (uint32_t)(1 << old_d);
-        uint32_t * temp_table = ( uint32_t * ) malloc ( table_n * sizeof ( uint32_t ) );
-
-        // temporarily store the values of the table before expanding it
-        for (int i = 0; i < table_n; i++)
-            temp_table[i] = directory->table[i];
 
         if ( directory->global_depth_d == 0 )
             directory->global_depth_d += 1;
         else
             directory->global_depth_d = directory->global_depth_d << 1;
 
+        uint32_t * new_table = ( uint32_t * ) malloc ( ( 1 << directory->global_depth_d) * sizeof ( uint32_t ) );
+
+        // store the values of the table
+        memcpy ( new_table, directory->table, table_n * sizeof (uint32_t) );
+        memcpy ( &new_table[table_n], directory->table, table_n * sizeof (uint32_t) );
+
         free (directory->table);
-        directory->table = ( uint32_t * ) malloc ( (1 << directory->global_depth_d) * sizeof ( uint32_t ) );
-
-        // copy back the old values to the bigger table
-        for (int i = 0; i < table_n; i++)
-            directory->table[i] = temp_table[i];
-
-        // map the new slots
-        for ( int i = table_n; i < ( 1 << directory->global_depth_d); i++ )
-        {
-            directory->table[i] = temp_table[i - table_n];
-        }
-        free (temp_table);
-
-        fprintf (stderr, "New size: %d (Global Depth: %d)\n", (1 << directory->global_depth_d), directory->global_depth_d );
+        directory->table = new_table;
     }
 }
 
 void read_Bucket ( struct BucketExt * des, int k )
 {
+    t_reads++;
     char path[50];
     sprintf ( path, "./.ext_hash/%d.bucket", k );
     FILE * f = fopen ( path, "rb" );
@@ -279,6 +252,7 @@ void read_Bucket ( struct BucketExt * des, int k )
 
 void write_Bucket ( struct BucketExt * src )
 {
+    t_writes++;
     char path[50];
     sprintf ( path, "./.ext_hash/%d.bucket", src->id );
     FILE * f = fopen ( path, "wb" );
@@ -291,6 +265,7 @@ void write_Bucket ( struct BucketExt * src )
 
 void delete_Bucket ( struct BucketExt * src )
 {
+    t_writes++;
     char path[50];
     sprintf ( path, "./.ext_hash/%d.bucket", src->id );
     unlink (path);
@@ -298,17 +273,13 @@ void delete_Bucket ( struct BucketExt * src )
 
 void collapse_buckets ( uint32_t b_index, struct BucketExt * bucket )
 {
-    fprintf (stderr, "Collapsing buckets... \n");
     // open "sister" bucket:
-    fprintf (stderr, "BucketExt: %d, Depth: %d\n", bucket->id, bucket->local_depth_k);
     uint8_t bitk = bit_at_k (b_index, bucket->local_depth_k);
     struct BucketExt * sister = ( struct BucketExt * ) malloc ( sizeof ( struct BucketExt ) );
 
     if ( bitk == 0 )
     {
-        fprintf (stderr, "BIndex: %d\n", b_index);
         b_index = b_index | (0x01 << (bucket->local_depth_k - 1));
-        fprintf (stderr, "BIndex: %d\n", b_index);
 
         if ( directory->table[b_index] == bucket->id )
             return; // no sister bucket
@@ -317,9 +288,7 @@ void collapse_buckets ( uint32_t b_index, struct BucketExt * bucket )
     }
     else
     {
-        fprintf (stderr, "BIndex: %d\n", b_index);
         b_index = b_index / 2;
-        fprintf (stderr, "BIndex: %d\n", b_index);
 
         if ( directory->table[b_index] == bucket->id )
             return; // no sister bucket
@@ -330,7 +299,6 @@ void collapse_buckets ( uint32_t b_index, struct BucketExt * bucket )
         bucket = temp;
     }
 
-    fprintf (stderr, "Buckets to be collapsed: %d and %d\n", bucket->id, sister->id);
 
 
     if ( (sister->n_entries + bucket->n_entries) > MAX_ENTRIES )
@@ -347,10 +315,20 @@ void collapse_buckets ( uint32_t b_index, struct BucketExt * bucket )
     write_Bucket (bucket);
 
     directory->table[b_index] = bucket->id;
-
+    directory->n_buckets--;
     free (bucket);
     delete_Bucket (sister);
     free (sister);
+}
+
+void get_read_writes_exthashing ( uint32_t * reads, uint32_t * writes )
+{
+    *reads = t_reads;
+    *writes = t_writes;
+}
 
 
+uint32_t get_blocks_exthashing ()
+{
+    return directory->n_buckets;
 }

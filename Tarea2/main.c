@@ -3,15 +3,29 @@
 // This submission is developed together with Camila Romero.
 
 #include <stdio.h>
-#include <stdlib.h>
 #include "lin_hashing.h"
+#include "ext_hashing.h"
+#include "generator.h"
+
+#define ALPHABET "GCAT"
+#define ALPH_LEN 4
 
 int main ()
 {
-    fprintf (stdout, "Testing insert into hash.\n");
     init_linhashing ();
-    put_value_linhashing ( "GGGGGGGGGGGGGGG" );
-    put_value_linhashing ( "CCCCCCCCCCCCCCC" );
-    put_value_linhashing ( "AAAAAAAAAAAAAAA" );
-    put_value_linhashing ( "TTTTTTTTTTTTTTT" );
+    init_exthashing ();
+    // Random Data
+    uint32_t count = 1 << 25;
+    char value[VALUE_LEN];
+    for ( uint32_t i = 0; i < count; i++ )
+    {
+        if ( i % 10000 == 0 )
+            printf ("%d\n", i);
+
+        generateRandomString (ALPH_LEN, ALPHABET, VALUE_LEN - 1, value);
+        put_value_linhashing (value);
+        put_value_exthashing (value);
+    }
+
+
 }
