@@ -6,6 +6,6 @@ package cc4102.tarea3.olguin_romero;
 public interface Tree {
     void put(String key, String value);
     String get(String key);
-    String delete (String key);
+    void delete (String key);
     int size();
 }
