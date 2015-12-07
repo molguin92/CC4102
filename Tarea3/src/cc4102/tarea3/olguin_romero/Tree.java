@@ -8,4 +8,5 @@ public interface Tree {
     String get(String key);
     void delete (String key);
     int size();
+    Node getRoot();
 }

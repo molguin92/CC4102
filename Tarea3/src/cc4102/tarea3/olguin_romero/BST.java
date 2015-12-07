@@ -7,8 +7,8 @@ import java.util.Random;
  */
 public class BST implements  Tree{
 
-    private BSTNode root;
-    private int size;
+    protected Node root;
+    protected int size;
 
     public BST()
     {
@@ -41,7 +41,7 @@ public class BST implements  Tree{
         if(root == null)
             return;
 
-        root = (BSTNode)root.delete(key);
+        root = root.delete(key);
     }
 
     @Override
@@ -49,12 +49,14 @@ public class BST implements  Tree{
         return this.size;
     }
 
-    private class BSTNode implements Node
+    @Override
+    public Node getRoot() {
+        return root;
+    }
+
+
+    protected class BSTNode extends Node
     {
-        public BSTNode left;
-        public BSTNode right;
-        public String value;
-        public String key;
 
         public BSTNode(String key, String value)
         {
@@ -71,7 +73,7 @@ public class BST implements  Tree{
          * @param value value
          */
         @Override
-        public void put(String key, String value) {
+        public Node put(String key, String value) {
             int comp = key.compareTo(this.key);
             if (comp == 0) // keys match, update value
             {
@@ -83,7 +85,7 @@ public class BST implements  Tree{
                 {
                     this.right = new BSTNode(key, value);
                     size++;
-                    return;
+                    return this;
                 }
 
                 this.right.put(key, value);
@@ -94,11 +96,13 @@ public class BST implements  Tree{
                 {
                     this.left = new BSTNode(key, value);
                     size++;
-                    return;
+                    return this;
                 }
 
                 this.left.put(key, value);
             }
+
+            return this;
         }
 
         /**
@@ -151,25 +155,25 @@ public class BST implements  Tree{
             else if ( comp > 0) // key > this key, search in right subtree
             {
                 if ( this.right != null )
-                    this.right = (BSTNode)this.right.delete(key);
+                    this.right = this.right.delete(key);
             }
             else // key < this key, search in left subtree
             {
                 if ( this.left != null )
-                    this.left = (BSTNode)this.left.delete(key);
+                    this.left = this.left.delete(key);
             }
             return this;
         }
 
-        private BSTNode replaceWithSuccessor()
+        protected Node replaceWithSuccessor()
         {
             if(this.right.left == null){
                 this.right.left = this.left;
                 return this.right;
             }
 
-            BSTNode parent = this.right;
-            BSTNode current = this.right.left;
+            Node parent = this.right;
+            Node current = this.right.left;
             while(current.left != null){
                 parent = current;
                 current = current.left;
@@ -180,15 +184,15 @@ public class BST implements  Tree{
             return  current;
         }
 
-        private BSTNode replaceWithPredecessor()
+        protected Node replaceWithPredecessor()
         {
             if(this.left.right == null){
                 this.left.right = this.right;
                 return this.right;
             }
 
-            BSTNode parent = this.left;
-            BSTNode current = this.left.right;
+            Node parent = this.left;
+            Node current = this.left.right;
             while(current.right != null){
                 parent = current;
                 current = current.right;
