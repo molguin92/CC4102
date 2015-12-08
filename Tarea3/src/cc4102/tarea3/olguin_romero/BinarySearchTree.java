@@ -17,7 +17,10 @@ public class BinarySearchTree implements Tree{
     @Override
     public void put(int key, String value) {
         if(root == null)
+        {
+            size++;
             root = new BSTNode(key, value);
+        }
         else
             root.put(key, value);
     }
@@ -37,7 +40,7 @@ public class BinarySearchTree implements Tree{
 
     @Override
     public int size() {
-        return 0;
+        return size;
     }
 
     @Override
@@ -65,7 +68,10 @@ public class BinarySearchTree implements Tree{
             {
                 // put left
                 if(this.left == null)
+                {
+                    size++;
                     this.left = new BSTNode(key, value);
+                }
                 else
                     this.left = this.left.put(key, value);
             }
@@ -73,7 +79,10 @@ public class BinarySearchTree implements Tree{
             {
                 // put right
                 if(this.right == null)
+                {
+                    size++;
                     this.right = new BSTNode(key, value);
+                }
                 else
                     this.right = this.right.put(key, value);
             }
