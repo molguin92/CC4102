@@ -37,9 +37,8 @@ public abstract class TreeTest {
 
         for(int i = 0; i < initsize; i++)
         {
-            String key = Integer.toString(i);
-            String value = tree.get(key);
-            assertEquals(key, value);
+            String value = tree.get(i);
+            assertEquals(Integer.toString(i), value);
         }
     }
 
@@ -49,10 +48,9 @@ public abstract class TreeTest {
 
         for(int i = 0; i < initsize; i++)
         {
-            String key = Integer.toString(i);
-            tree.delete(key);
+            tree.delete(i);
             assertEquals(initsize - i - 1, tree.size());
-            assertEquals(null, tree.get(key));
+            assertEquals(null, tree.get(i));
         }
     }
 

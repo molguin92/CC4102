@@ -10,12 +10,12 @@ public class VEBTree implements Tree {
     }
 
     @Override
-    public String get(String key) {
+    public String get(int key) {
         return null;
     }
 
     @Override
-    public void delete(String key) {
+    public void delete(int key) {
 
     }
 

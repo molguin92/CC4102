@@ -5,8 +5,8 @@ package cc4102.tarea3.olguin_romero;
  */
 public interface Tree {
     void put(int key, String value);
-    String get(String key);
-    void delete (String key);
+    String get(int key);
+    void delete (int key);
     int size();
     Node getRoot();
 }
