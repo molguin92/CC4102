@@ -1,5 +1,7 @@
 package cc4102.tarea3.olguin_romero;
 
+import java.util.Random;
+
 /**
  * Created by arachnid92 on 29-11-15.
  */
@@ -22,7 +24,7 @@ public class BinarySearchTree implements Tree{
             root = new BSTNode(key, value);
         }
         else
-            root.put(key, value);
+            root = root.put(key, value);
     }
 
     @Override
@@ -35,7 +37,8 @@ public class BinarySearchTree implements Tree{
 
     @Override
     public void delete(int key) {
-
+        if(root != null)
+            root = root.delete(key);
     }
 
     @Override
@@ -116,7 +119,98 @@ public class BinarySearchTree implements Tree{
 
         @Override
         Node delete(int key) {
-            return null;
+            if(this.key == key)
+            {
+                // delete myself
+                size--;
+                if(this.left == null && this.right == null) // no children
+                    return null;
+                else if (this.right == null) // left child
+                    return this.left;
+                else if (this.left == null) // right child
+                    return this.right;
+                else
+                {
+                    // both children. need to replace with successor or predecessor
+                    int i = new Random().nextInt(2);
+                    if(i == 0)
+                        return this.replaceWithPredecessor();
+                    else
+                        return this.replaceWithSuccessor();
+                }
+            }
+            else if (key < this.key)
+            {
+                if(this.left != null)
+                    this.left = this.left.delete(key);
+            }
+            else
+            {
+                if(this.right != null)
+                    this.right = this.right.delete(key);
+            }
+            return this;
+        }
+
+        private Node popLeftmost(Node to_replace)
+        {
+            if(this.left != null)
+            {
+                this.left = ((BSTNode) this.left).popLeftmost(to_replace);
+                return this;
+            }
+            else
+            {
+                // at the leftmost
+                to_replace.key = this.key;
+                to_replace.value = this.value;
+                return this.right;
+            }
+        }
+
+        private Node popRightmost(Node to_replace)
+        {
+            if(this.right != null)
+            {
+                this.right = ((BSTNode) this.right).popLeftmost(to_replace);
+                return this;
+            }
+            else
+            {
+                // at the leftmost
+                to_replace.key = this.key;
+                to_replace.value = this.value;
+                return this.left;
+            }
+        }
+
+
+        Node replaceWithSuccessor()
+        {
+            if(this.right.left == null)
+            {
+                // right child is the successor
+                this.right.left = this.left;
+                return this.right;
+            }
+            else
+            {
+                return this.popLeftmost(this);
+            }
+        }
+
+        Node replaceWithPredecessor()
+        {
+            if(this.left.right == null)
+            {
+                // left child is the predecessor
+                this.left.right = this.right;
+                return this.left;
+            }
+            else
+            {
+                return this.popRightmost(this);
+            }
         }
     }
 }
