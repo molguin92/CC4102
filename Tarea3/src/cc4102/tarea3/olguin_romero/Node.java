@@ -8,9 +8,9 @@ public abstract class Node {
     public Node left;
     public Node right;
     public String value;
-    public String key;
+    public int key;
 
-    abstract Node put(String key, String value);
-    abstract String get(String key);
-    abstract Node delete(String key);
+    abstract Node put(int key, String value);
+    abstract String get(int key);
+    abstract Node delete(int key);
 }

@@ -20,14 +20,14 @@ public abstract class TreeTest {
         for(int i = 0; i < initsize; i++)
         {
             String kv = Integer.toString(i);
-            tree.put(kv, kv);
+            tree.put(i, kv);
         }
     }
 
     @org.junit.Test
     public void testPut() throws Exception {
         assertEquals(initsize, tree.size());
-        tree.put("new key", "new value");
+        tree.put(8000, "new value");
         assertEquals(initsize + 1, tree.size());
     }
 

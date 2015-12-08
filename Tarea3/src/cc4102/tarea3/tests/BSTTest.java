@@ -1,6 +1,6 @@
 package cc4102.tarea3.tests;
 
-import cc4102.tarea3.olguin_romero.BST;
+import cc4102.tarea3.olguin_romero.BinarySearchTree;
 import org.junit.Before;
 
 /**
@@ -10,7 +10,7 @@ public class BSTTest extends TreeTest {
 
     @Before
     public void setUp() throws Exception {
-        tree = new BST();
+        tree = new BinarySearchTree();
         populate();
     }
 }
