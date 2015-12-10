@@ -70,7 +70,7 @@ public class VEBTree implements Tree {
         }
 
         @Override
-        Node put(int key, String value)
+        public Node put(int key, String value)
         {
             if (this.min > this.max) // we're empty
             {
@@ -115,7 +115,7 @@ public class VEBTree implements Tree {
         }
 
         @Override
-        String get(int key) {
+        public String get(int key) {
 
             if( key == this.min ) // in this node
                 return this.value;
@@ -133,11 +133,19 @@ public class VEBTree implements Tree {
         }
 
         @Override
-        Node delete(int key) {
+        public Node delete(int key) {
             if (this.max == key && this.min == key) // only one item, delete this node;
             {
                 size--;
                 return null;
+            }
+            else if ( this.summary == null )
+            {
+                if (this.min == key)
+                    this.min = this.max;
+                else if (this.max == key)
+                    this.max = this.min;
+                return this;
             }
             else if (this.min == key) // remove min and calculate a new minimum
             {

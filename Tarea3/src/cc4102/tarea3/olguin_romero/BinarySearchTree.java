@@ -61,7 +61,7 @@ public class BinarySearchTree implements Tree{
         }
 
         @Override
-        Node put(int key, String value) {
+        public Node put(int key, String value) {
             if(this.key == key)
             {
                 // found correct node
@@ -93,7 +93,7 @@ public class BinarySearchTree implements Tree{
         }
 
         @Override
-        String get(int key) {
+        public String get(int key) {
             if(this.key == key)
             {
                 // found correct node
@@ -118,7 +118,7 @@ public class BinarySearchTree implements Tree{
         }
 
         @Override
-        Node delete(int key) {
+        public Node delete(int key) {
             if(this.key == key)
             {
                 // delete myself
