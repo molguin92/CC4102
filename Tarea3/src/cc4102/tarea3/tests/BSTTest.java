@@ -44,9 +44,19 @@ public class BSTTest extends TreeTest {
 
     void recursiveCheckBSTNode(Node node)
     {
-        if((node == null) || (node.left != null && node.left.key < node.key) || (node.right != null && node.right.key < node.key))
+        if(node == null)
             return;
-        else
-            throw new AssertionError("Not BST.");
+
+        if (node.left != null){
+            if(!(node.left.key < node.key)) throw new AssertionError("Not BST. Left child " + node.left.key + " is greater than " + node.key);
+        }
+
+        if (node.right != null){
+            if(!(node.right.key > node.key)) throw new AssertionError("Not BST. Right child " + node.right.key + " is less than " + node.key);
+        }
+
+        recursiveCheckBSTNode(node.left);
+        recursiveCheckBSTNode(node.right);
+
     }
 }

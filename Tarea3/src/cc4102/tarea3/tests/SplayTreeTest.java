@@ -8,9 +8,10 @@ import static org.junit.Assert.*;
 /**
  * Created by arachnid92 on 09-12-15.
  */
-public class SplayTreeTest extends TreeTest {
+public class SplayTreeTest extends BSTTest {
 
     @Before
+    @Override
     public void setUp() throws Exception {
         this.tree = new SplayTree();
         populate();

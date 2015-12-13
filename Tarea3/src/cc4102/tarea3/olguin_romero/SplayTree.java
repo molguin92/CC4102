@@ -32,8 +32,9 @@ public class SplayTree implements Tree {
             return null;
         else {
             root = (SplayNode) root.splay(key);
-            if (root.key != key)
+            if (root.key != key) {
                 return null;
+            }
             else return root.value;
         }
     }
@@ -43,6 +44,7 @@ public class SplayTree implements Tree {
         if (root != null) {
             root = (SplayNode) root.splay(key);
             if (root.key == key) {
+                this.size--;
                 // split, pop and join
                 SplayNode left = (SplayNode) root.left;
                 SplayNode right = (SplayNode) root.right;
@@ -151,6 +153,13 @@ public class SplayTree implements Tree {
             this.parent = p.parent;
             p.parent = this;
 
+            if(this.parent != null) {
+                if (this.key < this.parent.key)
+                    this.parent.left = this;
+                else
+                    this.parent.right = this;
+            }
+
             if(this.right != null)
                 ((SplayNode)this.right).parent = p;
             p.left = this.right;
@@ -166,6 +175,13 @@ public class SplayTree implements Tree {
             this.parent = p.parent;
             p.parent = this;
 
+            if(this.parent != null) {
+                if (this.key < this.parent.key)
+                    this.parent.left = this;
+                else
+                    this.parent.right = this;
+            }
+
             if(this.left != null)
                 ((SplayNode)this.left).parent = p;
             p.right = this.left;
@@ -174,13 +190,16 @@ public class SplayTree implements Tree {
 
         public Node splay(int key)
         {
-            if (this.key == key || (this.key < key && this.left == null) || (this.key > key && this.right == null))
+            if (this.key == key || (this.key > key && this.left == null) || (this.key < key && this.right == null))
             {
                 // either we found the key, or it's not in the tree and we're at the closest node
                 // either way, we splay from here up!
 
+
                 if (this.parent == null) // we are at the root, no need to do anything
+                {
                     return this;
+                }
                 else if (this.parent.parent == null) // parent is the root
                 {
                     if (key < this.parent.key) // left case - zig

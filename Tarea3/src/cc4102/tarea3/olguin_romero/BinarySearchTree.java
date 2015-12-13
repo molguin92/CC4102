@@ -48,7 +48,7 @@ public class BinarySearchTree implements Tree{
 
     @Override
     public Node getRoot() {
-        return null;
+        return root;
     }
 
     protected class BSTNode extends Node
