@@ -69,7 +69,7 @@ public class SplayTree implements Tree {
                     while(left.right != null)
                         left = (SplayNode) left.right;
 
-                    root = (SplayNode) left.splay(key);
+                    root = (SplayNode) left.splay(left.key);
                     root.right = right;
                     right.parent = root;
                 }
