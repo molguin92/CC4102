@@ -5,6 +5,11 @@ import cc4102.tarea3.olguin_romero.Node;
 import org.junit.After;
 import org.junit.Before;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -26,14 +31,17 @@ public class BSTTest extends TreeTest {
     @Override
     public void testDelete() throws Exception {
         assertEquals(initsize, tree.size());
+        Integer[] all = set.toArray(new Integer[0]);
+        Collections.shuffle(Arrays.asList(all));
 
-        for(int i = 0; i < initsize; i++)
+        for (int i: all)
         {
             tree.delete(i);
-            assertEquals(initsize - i - 1, tree.size());
             assertEquals(null, tree.get(i));
             assertIsBST();
+            //assertEquals(initsize - i - 1, tree.size());
         }
+
     }
 
     void assertIsBST()

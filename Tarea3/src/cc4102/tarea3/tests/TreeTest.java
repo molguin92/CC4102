@@ -2,11 +2,9 @@ package cc4102.tarea3.tests;
 
 import cc4102.tarea3.olguin_romero.Tree;
 
-import java.util.HashSet;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 /**
  * Created by arachnid92 on 06-12-15.
@@ -14,7 +12,7 @@ import static org.junit.Assert.assertNotEquals;
 public abstract class TreeTest {
 
     public static int initsize = 256;
-    Tree tree;
+    public Tree tree;
     HashSet<Integer> set;
 
     @org.junit.Before
@@ -58,11 +56,19 @@ public abstract class TreeTest {
     @org.junit.Test
     public void testDelete() throws Exception {
         assertEquals(initsize, tree.size());
+        Random rnd = new Random(System.nanoTime());
 
-        for(int i: set)
+        while(set.size() > 0)
         {
-            tree.delete(i);
-            assertEquals(null, tree.get(i));
+            int item;
+            do {
+                item = rnd.nextInt(initsize);
+            } while (!set.contains(item));
+
+            System.out.println(item);
+            tree.delete(item);
+            set.remove(item);
+            assertEquals(null, tree.get(item));
             //assertEquals(initsize - i - 1, tree.size());
         }
     }

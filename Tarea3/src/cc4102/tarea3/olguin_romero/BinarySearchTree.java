@@ -124,19 +124,27 @@ public class BinarySearchTree implements Tree{
                 // delete myself
                 size--;
                 if(this.left == null && this.right == null) // no children
+                {
                     return null;
+                }
                 else if (this.right == null) // left child
+                {
                     return this.left;
+                }
                 else if (this.left == null) // right child
+                {
                     return this.right;
+                }
                 else
                 {
                     // both children. need to replace with successor or predecessor
                     int i = new Random().nextInt(2);
-                    if(i == 0)
+                    if(i == 0) {
                         return this.replaceWithPredecessor();
-                    else
+                    }
+                    else {
                         return this.replaceWithSuccessor();
+                    }
                 }
             }
             else if (key < this.key)
@@ -152,7 +160,7 @@ public class BinarySearchTree implements Tree{
             return this;
         }
 
-        private Node popLeftmost(Node to_replace)
+        Node popLeftmost(Node to_replace)
         {
             if(this.left != null)
             {
@@ -168,11 +176,11 @@ public class BinarySearchTree implements Tree{
             }
         }
 
-        private Node popRightmost(Node to_replace)
+        Node popRightmost(Node to_replace)
         {
             if(this.right != null)
             {
-                this.right = ((BSTNode) this.right).popLeftmost(to_replace);
+                this.right = ((BSTNode) this.right).popRightmost(to_replace);
                 return this;
             }
             else
@@ -187,30 +195,34 @@ public class BinarySearchTree implements Tree{
 
         Node replaceWithSuccessor()
         {
+            Node ret;
             if(this.right.left == null)
             {
                 // right child is the successor
                 this.right.left = this.left;
-                return this.right;
+                ret = this.right;
             }
             else
             {
-                return this.popLeftmost(this);
+                ret = ((BSTNode)this.right).popLeftmost(this);
             }
+            return ret;
         }
 
         Node replaceWithPredecessor()
         {
+            Node ret;
             if(this.left.right == null)
             {
                 // left child is the predecessor
                 this.left.right = this.right;
-                return this.left;
+                ret = this.left;
             }
             else
             {
-                return this.popRightmost(this);
+                ret = ((BSTNode)this.left).popRightmost(this);
             }
+            return ret;
         }
     }
 }
