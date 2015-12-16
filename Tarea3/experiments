@@ -1,0 +1,11 @@
+Para cada árbol y cada universo de datos, se ejecutaron 200 repeticiones de los siguientes experimentos:
+
+1. Insertar todos los elementos en orden, y borrarlos en orden.
+    Archivos ordered_input_delete_universe1 y 2 incluyen informacion del algoritmo y cuanto demoro en insertar, y en borrar.
+2. Insertar todos los elementos en orden aleatorio, y borrarlos en orden aletorio (distinto al primero!).
+    Archivos random_input_delete_universe1 y 2 incluyen informacion del algoritmo y cuanto demoro en insertar, y en borrar.
+3. Para cada 2^i, con i = 8,9,10,11 para universo1 e i = 6, 7, 8, 9 para universo2, se insertaron 2^i elementos aleatorios,
+y se buscaron 1000 elementos de los insertados. Archivos search_existent incluen informacion del algoritmo y el tamaño ademas del tiempo de busqueda.
+4. Lo mismo que lo anterior, pero se buscaron elementos aleatorios. search_random.
+5. finalmente, se hizo nuevamente lo mismo, pero en vez de buscar 1000 elementos distintos ya insertados,
+se busco 1000 veces el mismo elemento (para ver el rendimiento del splay!), para 2^i...

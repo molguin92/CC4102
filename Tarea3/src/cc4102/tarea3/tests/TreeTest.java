@@ -38,6 +38,7 @@ public abstract class TreeTest {
         assertEquals(initsize, tree.size());
         tree.put(8000, "new value");
         assertEquals(initsize + 1, tree.size());
+        assertEquals("new value", tree.get(8000));
     }
 
     @org.junit.Test
