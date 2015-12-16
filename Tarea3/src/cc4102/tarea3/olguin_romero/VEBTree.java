@@ -1,185 +1,180 @@
 package cc4102.tarea3.olguin_romero;
 
-/**
- * Created by arachnid92 on 08-12-15.
- */
-public class VEBTree implements Tree {
+public class VEBTree {
 
-    int size;
-    Node root;
-    int max_size;
+    private VEBNode root;
+    private static int MIN_SIZE = 2;
 
-    public VEBTree(int max_size)
-    {
-        this.size = 0;
-        this.root = null;
-        this.max_size = max_size;
+    public VEBTree(int size) {
+        root = new VEBNode(size);
     }
 
-    @Override
-    public void put(int key, String value) {
-        if (root == null)
-            root = new VEBNode(this.max_size);
-        root = root.put(key, value);
+    public void put(int x) {
+        root.put(x);
     }
 
-    @Override
-    public String get(int key)
-    {
-        if (root == null)
-            return null;
-
-        return root.get(key);
+    public boolean contains(int x) {
+        return root.contains(x);
     }
 
-    @Override
-    public void delete(int key)
-    {
-        if (root == null)
-            return;
-
-        root = root.delete(key);
+    public void delete(int x) {
+        root.delete(x);
     }
 
-    @Override
-    public int size() {
-        return size;
-    }
+    protected class VEBNode {
 
-    @Override
-    public Node getRoot() {
-        return root;
-    }
+        int size;
+        int sqrt;
+        int max;
+        int min;
+        VEBNode[] clusters;
+        VEBNode summary;
 
-    private class VEBNode extends Node
-    {
-
-        private int M;
-        private VEBNode[] clusters;
-        private VEBNode summary;
-        private int max;
-        private int min;
-        private String max_value;
-
-        public VEBNode(int size)
-        {
-            this.M = size;
-            this.clusters = new VEBNode[(int) Math.sqrt(size)];
+        public VEBNode(int size) {
+            this.size = size;
             this.max = -1;
-            this.min = this.M;
+            this.min = size;
+            this.sqrt = this.higherSquareRoot();
+            clusters = new VEBNode[sqrt];
+            summary = null;
         }
 
-        @Override
-        public Node put(int key, String value)
-        {
-            if (this.min > this.max) // we're empty
+        public void put(int x) {
+            if(this.isEmpty())
             {
-                size++;
-                this.max = key;
-                this.min = key;
-                this.max_value = value;
-                this.value = value;
-                return this;
+                this.min = x;
+                this.max = x;
+                return;
             }
 
-            if (this.summary == null)
-                this.summary = new VEBNode((int) Math.sqrt(M));
-
-            if ( key < this.min )
+            if(x < this.min)
             {
-                // swap min and key
-                int temp = this.min;
-                String tempv = this.value;
-
-                this.min = key;
-                this.value = value;
-
-                key = temp;
-                value = tempv;
-            }
-            else if (key > this.max)
-            {
-                this.max = key;
-                this.max_value = value;
+                int temp = x;
+                x = this.min;
+                this.min = temp;
             }
 
-            int i = (int) Math.floor(key/Math.sqrt(M));
-            if (this.clusters[i] == null)
+            if(x > this.max)
+                this.max = x;
+
+            if(x > this.min && this.size > VEBTree.MIN_SIZE)
             {
-                this.clusters[i] = new VEBNode((int) Math.sqrt(M));
-                this.summary.put(i, null);
-                size--;
+                int hi = this.high(x);
+                int li = this.low(x);
+
+                if(this.clusters[hi] == null)
+                {
+                    this.clusters[hi] = new VEBNode(sqrt);
+                    if(this.summary == null)
+                        this.summary = new VEBNode(sqrt);
+                    this.summary.put(hi);
+                }
+
+                this.clusters[hi].put(li);
             }
-            this.clusters[i].put((int) (key%Math.sqrt(M)), value);
-            return this;
         }
 
-        @Override
-        public String get(int key) {
-
-            if( key == this.min ) // in this node
-                return this.value;
-            else if ( key == this.max ) // in this node
-                return this.max_value;
-            else if ( !( this.min < key && key < this.max ) ) return null; // out of range
+        public boolean contains(int x) {
+            if(x == this.min || x == this.max)
+                return true;
+            else if (this.size == VEBTree.MIN_SIZE)
+                return false;
             else
             {
-                int i = (int) Math.floor(key / Math.sqrt(this.M));
-                if (this.clusters[i] == null)
-                    return null;
+                int hi = this.high(x);
+                int li = this.low(x);
+
+                if(this.clusters[hi] == null)
+                    return false;
                 else
-                    return this.clusters[i].get((int) (key%Math.sqrt(M)));
+                    return this.clusters[hi].contains(li);
             }
         }
 
-        @Override
-        public Node delete(int key) {
-            if (this.max == key && this.min == key) // only one item, delete this node;
+        void delete(int x) {
+            if(this.min == this.max)
             {
-                size--;
-                return null;
+                this.min = this.size;
+                this.max = -1;
             }
-            else if ( this.summary == null )
+            else if(VEBTree.MIN_SIZE == this.size)
             {
-                if (this.min == key)
-                    this.min = this.max;
-                else if (this.max == key)
-                    this.max = this.min;
-                return this;
-            }
-            else if (this.min == key) // remove min and calculate a new minimum
-            {
-                int index = this.summary.min;
-                this.min = this.clusters[index].min;
-                this.value = this.clusters[index].value;
-                this.clusters[index] = (VEBNode) this.clusters[index].delete((int) (this.min%Math.sqrt(M)));
-                if (this.clusters[index] == null) {
-                    this.summary = (VEBNode) this.summary.delete(index);
-                    size++;
+                if(0 == x)
+                {
+                    this.min = 1;
                 }
-            }
-            else if (this.max == key) // remove max and calculate a new maximum
-            {
-                int index = this.summary.max;
-                this.max = this.clusters[index].max;
-                this.max_value = this.clusters[index].value;
-                this.clusters[index] = (VEBNode) this.clusters[index].delete((int) (this.max%Math.sqrt(M)));
-                if (this.clusters[index] == null) {
-                    this.summary = (VEBNode) this.summary.delete(index);
-                    size++;
+                else
+                {
+                    this.min = 0;
                 }
+                this.max = this.min;
             }
-            else if ( this.min < key && key < this.max )
+            else if(x == this.min)
             {
-                int i = (int) Math.floor(key/Math.sqrt(M));
-                this.clusters[i] = (VEBNode) this.clusters[i].delete((int) (key%Math.sqrt(M)));
-                if (this.clusters[i] == null) {
-                    this.summary = (VEBNode) this.summary.delete(i);
-                    size++;
-                }
-            }
+                int summaryMin = this.summary.min;
+                x = (int) (summaryMin * lowerSquareRoot() + this.clusters[summaryMin].min);
+                this.min = x;
 
-            return this;
+                int highOfX = high( x);
+                int lowOfX = low(x);
+                this.clusters[highOfX].delete(lowOfX);
+
+                if(this.clusters[highOfX].size == this.clusters[highOfX].min)
+                {
+                    this.summary.delete(highOfX);
+                    if(x == this.max)
+                    {
+                        int summaryMax = this.summary.max;
+                        if(-1 == summaryMax)
+                        {
+                            this.max = this.min;
+                        }
+                        else
+                        {
+                            this.max = (int) (summaryMax * lowerSquareRoot() + this.clusters[summaryMax].max);
+                        }
+                    }
+                }
+                else if(x == this.max)
+                {
+                    this.max = (int) (highOfX * lowerSquareRoot() +  this.clusters[highOfX].max);
+                }
+            }
+        }
+
+        boolean isEmpty() {
+            return this.max < this.min;
+        }
+
+        /*
+	    * Returns the integer value of the first half of the bits of x.
+	    */
+        private int high(int x)
+        {
+            return (int)Math.floor(x / this.lowerSquareRoot());
+        }
+
+
+        /*
+         * Returns the integer value of the second half of the bits of x.
+         */
+        private int low(int x)
+        {
+            return x % (int)this.lowerSquareRoot();
+        }
+
+
+        /*
+         * Returns the value of the least significant bits of x.
+         */
+        private double lowerSquareRoot()
+        {
+            return Math.pow(2, Math.floor((Math.log10(this.size) / Math.log10(2)) / 2.0));
+        }
+
+        private int higherSquareRoot()
+        {
+            return (int)Math.pow(2, Math.ceil((Math.log10(this.size) / Math.log10(2)) / 2.0));
         }
     }
 }

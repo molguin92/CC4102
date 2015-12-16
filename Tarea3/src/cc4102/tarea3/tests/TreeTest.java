@@ -65,7 +65,6 @@ public abstract class TreeTest {
                 item = rnd.nextInt(initsize);
             } while (!set.contains(item));
 
-            System.out.println(item);
             tree.delete(item);
             set.remove(item);
             assertEquals(null, tree.get(item));
